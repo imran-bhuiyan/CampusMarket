@@ -10,7 +10,7 @@ import storage from '@/utils/storage';
 // Base URL for the NestJS backend
 // Android emulator uses 10.0.2.2 to access host localhost
 // Web and iOS simulator use localhost directly
-const API_BASE_URL = Platform.select({
+export const API_BASE_URL = Platform.select({
   android: 'http://10.0.2.2:3000',
   ios: 'http://localhost:3000',
   default: 'http://localhost:3000', // web

@@ -10,7 +10,8 @@ import authService from '@/services/auth.service';
 import type {
   AuthState,
   LoginCredentials,
-  RegisterCredentials
+  RegisterCredentials,
+  User
 } from '@/types';
 import storage from '@/utils/storage';
 
@@ -20,6 +21,7 @@ interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => Promise<void>;
+  updateUser: (user: User) => void;
 }
 
 // ---------- Context Creation ----------
@@ -151,6 +153,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Update user function (for profile updates)
+  const updateUser = useCallback((user: User) => {
+    setState(prev => ({ ...prev, user }));
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -158,6 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         register,
         logout,
+        updateUser,
       }}
     >
       {children}

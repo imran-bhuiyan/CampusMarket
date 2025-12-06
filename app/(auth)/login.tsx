@@ -6,13 +6,13 @@ import { Link } from 'expo-router';
 import { Lock, Mail, ShoppingBag } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, HelperText, Text, TextInput } from 'react-native-paper';
+import { Button, HelperText, Text, TextInput, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Colors } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginScreen() {
+  const theme = useTheme();
   const { login } = useAuth();
   
   const [email, setEmail] = useState('');
@@ -47,7 +47,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -58,13 +58,13 @@ export default function LoginScreen() {
         >
           {/* Logo & Title */}
           <View style={styles.header}>
-            <View style={styles.logoContainer}>
-              <ShoppingBag size={48} color={Colors.light.tint} />
+            <View style={[styles.logoContainer, { backgroundColor: theme.colors.primaryContainer }]}>
+              <ShoppingBag size={40} color={theme.colors.primary} />
             </View>
-            <Text variant="headlineLarge" style={styles.title}>
+            <Text variant="headlineMedium" style={{ fontWeight: 'bold', color: theme.colors.onBackground }}>
               CampusMarket
             </Text>
-            <Text variant="bodyLarge" style={styles.subtitle}>
+            <Text variant="bodyMedium" style={{ color: theme.colors.outline, marginTop: 4 }}>
               Buy & sell with fellow students
             </Text>
           </View>
@@ -79,7 +79,7 @@ export default function LoginScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
-              left={<TextInput.Icon icon={() => <Mail size={20} color={Colors.light.icon} />} />}
+              left={<TextInput.Icon icon={() => <Mail size={20} color={theme.colors.outline} />} />}
               style={styles.input}
             />
 
@@ -90,7 +90,7 @@ export default function LoginScreen() {
               mode="outlined"
               secureTextEntry={!showPassword}
               autoCapitalize="none"
-              left={<TextInput.Icon icon={() => <Lock size={20} color={Colors.light.icon} />} />}
+              left={<TextInput.Icon icon={() => <Lock size={20} color={theme.colors.outline} />} />}
               right={
                 <TextInput.Icon
                   icon={showPassword ? 'eye-off' : 'eye'}
@@ -120,11 +120,11 @@ export default function LoginScreen() {
 
           {/* Register Link */}
           <View style={styles.footer}>
-            <Text variant="bodyMedium" style={styles.footerText}>
+            <Text variant="bodyMedium" style={{ color: theme.colors.outline }}>
               Don't have an account?{' '}
             </Text>
             <Link href="/(auth)/register" asChild>
-              <Text variant="bodyMedium" style={styles.link}>
+              <Text variant="bodyMedium" style={{ color: theme.colors.primary, fontWeight: 'bold' }}>
                 Sign Up
               </Text>
             </Link>
@@ -138,7 +138,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   keyboardView: {
     flex: 1,
@@ -150,30 +149,21 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: 32,
   },
   logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    backgroundColor: '#f0f9ff',
+    width: 64,
+    height: 64,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    fontWeight: 'bold',
-    color: Colors.light.text,
-  },
-  subtitle: {
-    color: Colors.light.icon,
-    marginTop: 4,
+    marginBottom: 12,
   },
   form: {
-    gap: 16,
+    gap: 12,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
   },
   button: {
     marginTop: 8,
@@ -185,13 +175,6 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 32,
-  },
-  footerText: {
-    color: Colors.light.icon,
-  },
-  link: {
-    color: Colors.light.tint,
-    fontWeight: '600',
+    marginTop: 24,
   },
 });

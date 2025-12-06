@@ -110,6 +110,22 @@ export class AuthService {
     return userWithoutPassword as Omit<User, 'password'>;
   }
 
+  async updateProfilePicture(userId: number, filename: string): Promise<Omit<User, 'password'>> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    user.profilePicture = `/uploads/profiles/${filename}`;
+    await this.userRepository.save(user);
+
+    const { password: _, ...userWithoutPassword } = user;
+    return userWithoutPassword as Omit<User, 'password'>;
+  }
+
   private generateToken(user: User): string {
     const payload = { sub: user.id, email: user.email };
     return this.jwtService.sign(payload);

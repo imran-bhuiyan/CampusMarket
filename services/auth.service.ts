@@ -50,6 +50,43 @@ export const authService = {
     // Actual token clearing is handled in AuthContext
     return;
   },
+
+  /**
+   * Upload profile picture.
+   * Returns updated user data.
+   * Handles both web (blob URL) and native (file URI) formats.
+   */
+  uploadProfilePicture: async (imageUri: string): Promise<User> => {
+    const formData = new FormData();
+    
+    // Check if running on web (blob URL starts with 'blob:')
+    const isWeb = imageUri.startsWith('blob:') || typeof window !== 'undefined' && window.document;
+    
+    if (isWeb && imageUri.startsWith('blob:')) {
+      // Web: fetch the blob and append it directly
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      const extension = blob.type.split('/')[1] || 'jpg';
+      formData.append('file', blob, `profile.${extension}`);
+    } else {
+      // Native: use the URI-based approach
+      const uriParts = imageUri.split('.');
+      const fileType = uriParts[uriParts.length - 1] || 'jpg';
+      
+      formData.append('file', {
+        uri: imageUri,
+        name: `profile.${fileType}`,
+        type: `image/${fileType}`,
+      } as any);
+    }
+
+    const { data } = await api.patch<User>('/auth/profile/picture', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return data;
+  },
 };
 
 export default authService;

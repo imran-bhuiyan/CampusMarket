@@ -33,6 +33,9 @@ export class User {
   @Column()
   department: string;
 
+  @Column({ nullable: true })
+  profilePicture: string;
+
   @Column({ type: 'enum', enum: ['user', 'admin'], default: 'user' })
   role: UserRole;
 

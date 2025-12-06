@@ -3,7 +3,7 @@
 // ============================================
 
 import { Image } from 'expo-image';
-import { MapPin, Tag } from 'lucide-react-native';
+import { BookOpen, Clock, Laptop, MapPin, Package, Tag, User } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
     FlatList,
@@ -18,15 +18,16 @@ import {
     Chip,
     Searchbar,
     Text,
+    useTheme,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Colors } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import productService from '@/services/product.service';
 import type { Product } from '@/types';
 
 export default function HomeScreen() {
+  const theme = useTheme();
   const { user } = useAuth();
   
   const [products, setProducts] = useState<Product[]>([]);
@@ -64,62 +65,121 @@ export default function HomeScreen() {
     product.department.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'books':
+        return <BookOpen size={12} color={theme.colors.primary} />;
+      case 'electronics':
+        return <Laptop size={12} color={theme.colors.primary} />;
+      default:
+        return <Package size={12} color={theme.colors.primary} />;
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return `${Math.floor(diffDays / 7)}w ago`;
+  };
+
   const renderProductCard = ({ item }: { item: Product }) => (
-    <Pressable style={styles.cardContainer}>
-      <Card style={styles.card} mode="elevated">
-        <Image
-          source={{ uri: item.images[0] || 'https://via.placeholder.com/300x200' }}
-          style={styles.cardImage}
-          contentFit="cover"
-        />
-        <Card.Content style={styles.cardContent}>
-          <Text variant="titleMedium" numberOfLines={1} style={styles.productTitle}>
-            {item.title}
-          </Text>
-          <Text variant="titleLarge" style={styles.price}>
-            ${Number(item.price).toFixed(2)}
-          </Text>
-          <View style={styles.metaRow}>
-            <View style={styles.metaItem}>
-              <MapPin size={14} color={Colors.light.icon} />
-              <Text variant="bodySmall" style={styles.metaText}>
-                {item.department}
+    
+      <Pressable style={styles.cardContainer}>
+        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]} mode="elevated">
+          {/* Image with Category Badge */}
+          <View style={styles.imageContainer}>
+            <Image
+              source={{ uri: item.images[0] || 'https://via.placeholder.com/300x200' }}
+              style={styles.cardImage}
+              contentFit="cover"
+            />
+            {/* Category Badge */}
+            <View style={[styles.categoryBadge, { backgroundColor: theme.colors.surface }]}>
+              {getCategoryIcon(item.category)}
+              <Text variant="labelSmall" style={{ color: theme.colors.primary, textTransform: 'capitalize' }}>
+                {item.category}
               </Text>
             </View>
           </View>
-          <Chip 
-            compact 
-            style={styles.conditionChip}
-            textStyle={styles.conditionText}
-          >
-            {item.condition.replace('_', ' ')}
-          </Chip>
-        </Card.Content>
-      </Card>
-    </Pressable>
-  );
+
+          <Card.Content style={styles.cardContent}>
+            {/* Title */}
+            <Text variant="titleMedium" numberOfLines={2} style={{ fontWeight: '600', color: theme.colors.onBackground, marginBottom: 6, lineHeight: 20 }}>
+              {item.title}
+            </Text>
+
+            {/* Price */}
+            <Text variant="titleLarge" style={{ fontWeight: 'bold', color: theme.colors.primary, marginBottom: 8 }}>
+              ৳{Number(item.price).toFixed(0)}
+            </Text>
+
+            {/* Department */}
+            <View style={styles.metaRow}>
+              <View style={styles.metaItem}>
+                <MapPin size={12} color={theme.colors.outline} />
+                <Text variant="labelSmall" numberOfLines={1} style={{ color: theme.colors.outline, flex: 1 }}>
+                  {item.department}
+                </Text>
+              </View>
+            </View>
+
+            {/* Seller Info */}
+            <View style={styles.metaRow}>
+              <View style={styles.metaItem}>
+                <User size={12} color={theme.colors.outline} />
+                <Text variant="labelSmall" numberOfLines={1} style={{ color: theme.colors.outline }}>
+                  {item.seller?.name || 'Unknown'}
+                </Text>
+              </View>
+            </View>
+
+            {/* Bottom Row: Condition & Time */}
+            <View style={styles.bottomRow}>
+              <Chip 
+                compact 
+                style={[styles.conditionChip, { backgroundColor: theme.colors.primaryContainer }]}
+                textStyle={{ fontSize: 10, textTransform: 'capitalize', color: theme.colors.primary }}
+              >
+                {item.condition.replace('_', ' ')}
+              </Chip>
+              <View style={styles.timeContainer}>
+                <Clock size={10} color={theme.colors.outline} />
+                <Text variant="labelSmall" style={{ color: theme.colors.outline, fontSize: 10 }}>
+                  {formatTimeAgo(item.createdAt)}
+                </Text>
+              </View>
+            </View>
+          </Card.Content>
+        </Card>
+      </Pressable>
+    );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
         <View>
-          <Text variant="bodyMedium" style={styles.greeting}>
+          <Text variant="bodyMedium" style={{ color: theme.colors.outline }}>
             Welcome back,
           </Text>
-          <Text variant="headlineSmall" style={styles.userName}>
+          <Text variant="headlineSmall" style={{ fontWeight: 'bold', color: theme.colors.onBackground }}>
             {user?.name || 'Student'}
           </Text>
         </View>
       </View>
 
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
+      <View style={[styles.searchContainer, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.surfaceVariant }]}>
         <Searchbar
           placeholder="Search products or departments..."
           onChangeText={setSearchQuery}
           value={searchQuery}
-          style={styles.searchBar}
+          style={[styles.searchBar, { backgroundColor: theme.colors.surfaceVariant }]}
           inputStyle={styles.searchInput}
         />
       </View>
@@ -127,8 +187,8 @@ export default function HomeScreen() {
       {/* Products Feed */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.light.tint} />
-          <Text variant="bodyMedium" style={styles.loadingText}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text variant="bodyMedium" style={{ color: theme.colors.outline }}>
             Loading products...
           </Text>
         </View>
@@ -145,16 +205,16 @@ export default function HomeScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={[Colors.light.tint]}
+              colors={[theme.colors.primary]}
             />
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Tag size={48} color={Colors.light.icon} />
-              <Text variant="titleMedium" style={styles.emptyTitle}>
+              <Tag size={48} color={theme.colors.outline} />
+              <Text variant="titleMedium" style={{ fontWeight: '600', color: theme.colors.onBackground }}>
                 No products found
               </Text>
-              <Text variant="bodyMedium" style={styles.emptyText}>
+              <Text variant="bodyMedium" style={{ color: theme.colors.outline, textAlign: 'center' }}>
                 Try adjusting your search or check back later
               </Text>
             </View>
@@ -232,7 +292,6 @@ const PLACEHOLDER_PRODUCTS: Product[] = [
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
     flexDirection: 'row',
@@ -240,24 +299,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#fff',
-  },
-  greeting: {
-    color: Colors.light.icon,
-  },
-  userName: {
-    fontWeight: 'bold',
-    color: Colors.light.text,
   },
   searchContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   searchBar: {
-    backgroundColor: '#f5f5f5',
     borderRadius: 12,
     elevation: 0,
   },
@@ -275,47 +323,56 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
+  },
+  imageContainer: {
+    position: 'relative',
   },
   cardImage: {
     width: '100%',
-    height: 120,
+    height: 130,
+  },
+  categoryBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   cardContent: {
     padding: 12,
   },
-  productTitle: {
-    fontWeight: '600',
-    color: Colors.light.text,
-    marginBottom: 4,
-  },
-  price: {
-    fontWeight: 'bold',
-    color: Colors.light.tint,
-    marginBottom: 8,
-  },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    flex: 1,
   },
-  metaText: {
-    color: Colors.light.icon,
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
   },
   conditionChip: {
     alignSelf: 'flex-start',
-    backgroundColor: '#e8f5e9',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  conditionText: {
-    fontSize: 10,
-    textTransform: 'capitalize',
+  timeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
   },
   loadingContainer: {
     flex: 1,
@@ -323,22 +380,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  loadingText: {
-    color: Colors.light.icon,
-  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 48,
     gap: 12,
-  },
-  emptyTitle: {
-    fontWeight: '600',
-    color: Colors.light.text,
-  },
-  emptyText: {
-    color: Colors.light.icon,
-    textAlign: 'center',
   },
 });
