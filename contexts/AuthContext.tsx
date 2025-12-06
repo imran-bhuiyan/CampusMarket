@@ -5,12 +5,12 @@
 import { useRouter, useSegments } from 'expo-router';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
-import { TOKEN_KEY } from '@/services/api';
+import { TOKEN_KEY, setToken } from '@/services/api';
 import authService from '@/services/auth.service';
 import type {
-    AuthState,
-    LoginCredentials,
-    RegisterCredentials
+  AuthState,
+  LoginCredentials,
+  RegisterCredentials
 } from '@/types';
 import storage from '@/utils/storage';
 
@@ -59,12 +59,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.isAuthenticated, state.isLoading, segments]);
 
-  // Load stored authentication
+  // Load stored authentication on app startup
   const loadStoredAuth = async () => {
     try {
       const token = await storage.getItem(TOKEN_KEY);
       
       if (token) {
+        // Set token in axios before making any authenticated request
+        setToken(token);
+        
         // Verify token by fetching user profile
         const user = await authService.getProfile();
         setState({
@@ -77,8 +80,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setState(prev => ({ ...prev, isLoading: false }));
       }
     } catch (error) {
-      // Token invalid or expired
+      // Token invalid or expired - clear everything
+      console.warn('Token validation failed:', error);
       await storage.removeItem(TOKEN_KEY);
+      setToken(null);
       setState({
         user: null,
         token: null,
@@ -90,46 +95,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Login function
   const login = useCallback(async (credentials: LoginCredentials) => {
-    try {
-      const response = await authService.login(credentials);
-      
-      // Store token securely
-      await storage.setItem(TOKEN_KEY, response.accessToken);
-      
-      setState({
-        user: response.user,
-        token: response.accessToken,
-        isLoading: false,
-        isAuthenticated: true,
-      });
-    } catch (error) {
-      throw error;
-    }
+    const response = await authService.login(credentials);
+    
+    // Persist token to storage and update axios instance
+    await storage.setItem(TOKEN_KEY, response.accessToken);
+    setToken(response.accessToken);
+    
+    setState({
+      user: response.user,
+      token: response.accessToken,
+      isLoading: false,
+      isAuthenticated: true,
+    });
   }, []);
 
   // Register function
   const register = useCallback(async (credentials: RegisterCredentials) => {
-    try {
-      const response = await authService.register(credentials);
-      
-      // Store token securely
-      await storage.setItem(TOKEN_KEY, response.accessToken);
-      
-      setState({
-        user: response.user,
-        token: response.accessToken,
-        isLoading: false,
-        isAuthenticated: true,
-      });
-    } catch (error) {
-      throw error;
-    }
+    const response = await authService.register(credentials);
+    
+    // Persist token to storage and update axios instance
+    await storage.setItem(TOKEN_KEY, response.accessToken);
+    setToken(response.accessToken);
+    
+    setState({
+      user: response.user,
+      token: response.accessToken,
+      isLoading: false,
+      isAuthenticated: true,
+    });
   }, []);
 
   // Logout function
   const logout = useCallback(async () => {
     try {
+      // Clear token from storage and axios instance
       await storage.removeItem(TOKEN_KEY);
+      setToken(null);
+      
       setState({
         user: null,
         token: null,
@@ -138,6 +140,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     } catch (error) {
       console.error('Logout error:', error);
+      // Even if storage fails, clear in-memory state
+      setToken(null);
+      setState({
+        user: null,
+        token: null,
+        isLoading: false,
+        isAuthenticated: false,
+      });
     }
   }, []);
 

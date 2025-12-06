@@ -6,41 +6,49 @@ import type {
     AuthResponse,
     LoginCredentials,
     RegisterCredentials,
-    User
+    User,
 } from '@/types';
+
 import api from './api';
+
+// ---------- Service Methods ----------
 
 export const authService = {
   /**
-   * Login with email and password
+   * Login with email and password.
+   * Returns user data and access token.
    */
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>('/auth/login', credentials);
-    return response.data;
+  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+    const { data } = await api.post<AuthResponse>('/auth/login', credentials);
+    return data;
   },
 
   /**
-   * Register a new user
+   * Register a new user.
+   * Only sends: name, email, password, department.
+   * The backend assigns the role (defaults to 'user').
    */
-  async register(credentials: RegisterCredentials): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>('/auth/register', credentials);
-    return response.data;
+  register: async (payload: RegisterCredentials): Promise<AuthResponse> => {
+    const { data } = await api.post<AuthResponse>('/auth/register', payload);
+    return data;
   },
 
   /**
-   * Get current user profile
+   * Get the currently authenticated user's profile.
+   * Requires a valid token in the Authorization header.
    */
-  async getProfile(): Promise<User> {
-    const response = await api.get<User>('/auth/profile');
-    return response.data;
+  getProfile: async (): Promise<User> => {
+    const { data } = await api.get<User>('/auth/profile');
+    return data;
   },
 
   /**
-   * Logout (client-side only - clear token)
+   * Logout - currently client-side only.
+   * If a refresh-token system is added later, call /auth/logout here.
    */
-  async logout(): Promise<void> {
-    // Backend can optionally invalidate token
-    // For now, we just clear it client-side
+  logout: async (): Promise<void> => {
+    // Actual token clearing is handled in AuthContext
+    return;
   },
 };
 

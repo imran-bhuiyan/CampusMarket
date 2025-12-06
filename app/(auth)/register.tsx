@@ -1,46 +1,53 @@
-// ============================================
-// CampusMarket - Register Screen
-// ============================================
-
 import { Link } from 'expo-router';
-import { Building2, Lock, Mail, ShoppingBag, User } from 'lucide-react-native';
+import { Building2, ChevronDown, Lock, Mail, ShoppingBag, User } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, HelperText, Text, TextInput } from 'react-native-paper';
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Button, Divider, HelperText, Menu, Text, TextInput, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Colors } from '@/constants/theme';
+// Make sure this hook exists in your project, or replace with mock logic
 import { useAuth } from '@/contexts/AuthContext';
 
-// Common departments for university students
+// UIU Departments List
 const DEPARTMENTS = [
-  'Computer Science',
-  'Electrical Engineering',
-  'Mechanical Engineering',
-  'Business Administration',
-  'Economics',
-  'Mathematics',
-  'Physics',
-  'Chemistry',
-  'Biology',
-  'Other',
+  "Computer Science and Engineering (CSE)",
+  "Electrical and Electronic Engineering (EEE)",
+  "Civil Engineering (CE)",
+  "Business Administration (BBA)",
+  "Economics",
+  "English and Humanities",
+  "Media Studies and Journalism (MSJ)",
+  "Environment and Development Studies (EDS)",
+  "Pharmacy",
+  "Biotechnology and Genetic Engineering (BGE)",
+  "Other"
 ];
 
 export default function RegisterScreen() {
-  const { register } = useAuth();
+  const theme = useTheme();
+  // Using optional chaining incase AuthContext isn't fully set up yet
+  const { register } = useAuth?.() || { register: async () => {} };
   
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [department, setDepartment] = useState('');
+  
+  // --- Department Logic ---
+  const [department, setDepartment] = useState(''); // Selection from dropdown
+  const [customDepartment, setCustomDepartment] = useState(''); // Text for "Other"
+  const [showDeptMenu, setShowDeptMenu] = useState(false); // Menu visibility
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleRegister = async () => {
-    // Validation
-    if (!name.trim() || !email.trim() || !password.trim() || !department.trim()) {
+    // 1. Resolve final department name
+    const finalDepartment = department === 'Other' ? customDepartment.trim() : department;
+
+    // 2. Validation
+    if (!name.trim() || !email.trim() || !password.trim() || !finalDepartment) {
       setError('Please fill in all fields');
       return;
     }
@@ -68,7 +75,7 @@ export default function RegisterScreen() {
         name: name.trim(),
         email: email.trim(),
         password,
-        department: department.trim(),
+        department: finalDepartment, // Send the resolved department
       });
     } catch (err: any) {
       const message = err.response?.data?.message || 'Registration failed. Please try again.';
@@ -79,7 +86,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -88,20 +95,20 @@ export default function RegisterScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Logo & Title */}
+          {/* Header Section */}
           <View style={styles.header}>
-            <View style={styles.logoContainer}>
-              <ShoppingBag size={40} color={Colors.light.tint} />
+            <View style={[styles.logoContainer, { backgroundColor: theme.colors.primaryContainer }]}>
+              <ShoppingBag size={40} color={theme.colors.primary} />
             </View>
-            <Text variant="headlineMedium" style={styles.title}>
+            <Text variant="headlineMedium" style={{ fontWeight: 'bold', color: theme.colors.onBackground }}>
               Create Account
             </Text>
-            <Text variant="bodyMedium" style={styles.subtitle}>
+            <Text variant="bodyMedium" style={{ color: theme.colors.outline, marginTop: 4 }}>
               Join the campus marketplace
             </Text>
           </View>
 
-          {/* Register Form */}
+          {/* Form Section */}
           <View style={styles.form}>
             <TextInput
               label="Full Name"
@@ -109,8 +116,7 @@ export default function RegisterScreen() {
               onChangeText={setName}
               mode="outlined"
               autoCapitalize="words"
-              autoComplete="name"
-              left={<TextInput.Icon icon={() => <User size={20} color={Colors.light.icon} />} />}
+              left={<TextInput.Icon icon={() => <User size={20} color={theme.colors.outline} />} />}
               style={styles.input}
             />
 
@@ -121,20 +127,58 @@ export default function RegisterScreen() {
               mode="outlined"
               keyboardType="email-address"
               autoCapitalize="none"
-              autoComplete="email"
-              left={<TextInput.Icon icon={() => <Mail size={20} color={Colors.light.icon} />} />}
+              left={<TextInput.Icon icon={() => <Mail size={20} color={theme.colors.outline} />} />}
               style={styles.input}
             />
 
-            <TextInput
-              label="Department"
-              value={department}
-              onChangeText={setDepartment}
-              mode="outlined"
-              autoCapitalize="words"
-              left={<TextInput.Icon icon={() => <Building2 size={20} color={Colors.light.icon} />} />}
-              style={styles.input}
-            />
+            {/* --- DEPARTMENT DROPDOWN --- */}
+            <Menu
+              visible={showDeptMenu}
+              onDismiss={() => setShowDeptMenu(false)}
+              anchor={
+                <Pressable onPress={() => { Keyboard.dismiss(); setShowDeptMenu(true); }}>
+                  <View pointerEvents="none">
+                    <TextInput
+                      label="Department"
+                      value={department}
+                      mode="outlined"
+                      editable={false} // Makes it act like a button
+                      left={<TextInput.Icon icon={() => <Building2 size={20} color={theme.colors.outline} />} />}
+                      right={<TextInput.Icon icon={() => <ChevronDown size={20} color={theme.colors.outline} />} />}
+                      style={styles.input}
+                    />
+                  </View>
+                </Pressable>
+              }
+              contentStyle={{ backgroundColor: theme.colors.elevation.level2 }}
+            >
+              {DEPARTMENTS.map((dept, index) => (
+                <React.Fragment key={dept}>
+                  <Menu.Item 
+                    onPress={() => {
+                      setDepartment(dept);
+                      setShowDeptMenu(false);
+                      if (dept !== 'Other') setCustomDepartment('');
+                    }} 
+                    title={dept}
+                  />
+                  {index < DEPARTMENTS.length - 1 && <Divider />}
+                </React.Fragment>
+              ))}
+            </Menu>
+
+            {/* "Other" Department Input */}
+            {department === 'Other' && (
+              <TextInput
+                label="Type your Department Name"
+                value={customDepartment}
+                onChangeText={setCustomDepartment}
+                mode="outlined"
+                autoCapitalize="words"
+                placeholder="e.g. Data Science"
+                style={[styles.input, { marginTop: -8 }]}
+              />
+            )}
 
             <TextInput
               label="Password"
@@ -143,7 +187,7 @@ export default function RegisterScreen() {
               mode="outlined"
               secureTextEntry={!showPassword}
               autoCapitalize="none"
-              left={<TextInput.Icon icon={() => <Lock size={20} color={Colors.light.icon} />} />}
+              left={<TextInput.Icon icon={() => <Lock size={20} color={theme.colors.outline} />} />}
               right={
                 <TextInput.Icon
                   icon={showPassword ? 'eye-off' : 'eye'}
@@ -160,7 +204,7 @@ export default function RegisterScreen() {
               mode="outlined"
               secureTextEntry={!showPassword}
               autoCapitalize="none"
-              left={<TextInput.Icon icon={() => <Lock size={20} color={Colors.light.icon} />} />}
+              left={<TextInput.Icon icon={() => <Lock size={20} color={theme.colors.outline} />} />}
               style={styles.input}
             />
 
@@ -182,13 +226,13 @@ export default function RegisterScreen() {
             </Button>
           </View>
 
-          {/* Login Link */}
+          {/* Footer Link */}
           <View style={styles.footer}>
-            <Text variant="bodyMedium" style={styles.footerText}>
+            <Text variant="bodyMedium" style={{ color: theme.colors.outline }}>
               Already have an account?{' '}
             </Text>
             <Link href="/(auth)/login" asChild>
-              <Text variant="bodyMedium" style={styles.link}>
+              <Text variant="bodyMedium" style={{ color: theme.colors.primary, fontWeight: 'bold' }}>
                 Sign In
               </Text>
             </Link>
@@ -202,7 +246,6 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   keyboardView: {
     flex: 1,
@@ -220,24 +263,15 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 16,
-    backgroundColor: '#f0f9ff',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
-  },
-  title: {
-    fontWeight: 'bold',
-    color: Colors.light.text,
-  },
-  subtitle: {
-    color: Colors.light.icon,
-    marginTop: 4,
   },
   form: {
     gap: 12,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
   },
   button: {
     marginTop: 8,
@@ -250,12 +284,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 24,
-  },
-  footerText: {
-    color: Colors.light.icon,
-  },
-  link: {
-    color: Colors.light.tint,
-    fontWeight: '600',
   },
 });
