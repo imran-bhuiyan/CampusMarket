@@ -1,6 +1,4 @@
-// ============================================
-// CampusMarket - Login Screen
-// ============================================
+//Login Screen
 
 import { Link } from 'expo-router';
 import { Lock, Mail, ShoppingBag } from 'lucide-react-native';

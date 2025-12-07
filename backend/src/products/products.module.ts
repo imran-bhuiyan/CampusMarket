@@ -1,6 +1,4 @@
-// ============================================
-// CampusMarket - Products Module
-// ============================================
+//Products Module
 
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';

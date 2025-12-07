@@ -1,6 +1,4 @@
-// ============================================
 // CampusMarket - Database Seed Script
-// ============================================
 
 import * as bcrypt from 'bcrypt';
 import { DataSource } from 'typeorm';
@@ -25,31 +23,37 @@ async function seed() {
   const userRepo = AppDataSource.getRepository(User);
   const productRepo = AppDataSource.getRepository(Product);
 
-  // Create demo user
-  let demoUser = await userRepo.findOne({ where: { email: 'demo@campus.edu' } });
-  
-  if (!demoUser) {
-    const hashedPassword = await bcrypt.hash('password123', 10);
-    demoUser = userRepo.create({
-      email: 'demo@campus.edu',
-      password: hashedPassword,
-      name: 'Demo Student',
-      department: 'Computer Science',
-      role: 'user',
-    });
-    await userRepo.save(demoUser);
-    console.log('✅ Demo user created');
+  const hashedPassword = await bcrypt.hash('password123', 10);
+
+  // Create multiple users with real names
+  const usersData = [
+    { email: 'sarah.chen@campus.edu', name: 'Sarah Chen', department: 'CSE' },
+    { email: 'james.wilson@campus.edu', name: 'James Wilson', department: 'EEE' },
+    { email: 'emily.rodriguez@campus.edu', name: 'Emily Rodriguez', department: 'BBA' },
+    { email: 'michael.ahmed@campus.edu', name: 'Michael Ahmed', department: 'ME' },
+    { email: 'priya.sharma@campus.edu', name: 'Priya Sharma', department: 'CSE' },
+  ];
+
+  const users: User[] = [];
+  for (const userData of usersData) {
+    let user = await userRepo.findOne({ where: { email: userData.email } });
+    if (!user) {
+      user = userRepo.create({
+        ...userData,
+        password: hashedPassword,
+        role: 'user',
+      });
+      await userRepo.save(user);
+      console.log(`✅ User created: ${user.name}`);
+    }
+    users.push(user);
   }
 
-  // Check if products exist
-  const existingProducts = await productRepo.count();
-  if (existingProducts > 0) {
-    console.log(`ℹ️  ${existingProducts} products already exist`);
-    await AppDataSource.destroy();
-    return;
-  }
+  // Clear existing products for fresh seed
+  await productRepo.delete({});
+  console.log('🗑️  Cleared existing products');
 
-  // Sample products
+  // Sample products with different sellers
   const products = [
     {
       title: 'Calculus Textbook - Stewart 8th Edition',
@@ -57,9 +61,9 @@ async function seed() {
       price: 45.00,
       category: 'books' as const,
       condition: 'good' as const,
-      department: 'Mathematics',
+      department: 'CSE',
       images: ['https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'],
-      sellerId: demoUser.id,
+      sellerId: users[0].id,
       isAvailable: true,
     },
     {
@@ -68,9 +72,9 @@ async function seed() {
       price: 1200.00,
       category: 'electronics' as const,
       condition: 'like_new' as const,
-      department: 'Computer Science',
+      department: 'CSE',
       images: ['https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400'],
-      sellerId: demoUser.id,
+      sellerId: users[4].id,
       isAvailable: true,
     },
     {
@@ -79,9 +83,9 @@ async function seed() {
       price: 25.00,
       category: 'books' as const,
       condition: 'like_new' as const,
-      department: 'Physics',
+      department: 'EEE',
       images: ['https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400'],
-      sellerId: demoUser.id,
+      sellerId: users[1].id,
       isAvailable: true,
     },
     {
@@ -90,9 +94,9 @@ async function seed() {
       price: 60.00,
       category: 'electronics' as const,
       condition: 'good' as const,
-      department: 'Engineering',
+      department: 'EEE',
       images: ['https://images.unsplash.com/photo-1564466809058-bf4114d55352?w=400'],
-      sellerId: demoUser.id,
+      sellerId: users[1].id,
       isAvailable: true,
     },
     {
@@ -101,9 +105,9 @@ async function seed() {
       price: 55.00,
       category: 'books' as const,
       condition: 'good' as const,
-      department: 'Chemistry',
+      department: 'BBA',
       images: ['https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=400'],
-      sellerId: demoUser.id,
+      sellerId: users[2].id,
       isAvailable: true,
     },
     {
@@ -112,9 +116,9 @@ async function seed() {
       price: 20.00,
       category: 'furniture' as const,
       condition: 'like_new' as const,
-      department: 'General',
+      department: 'ME',
       images: ['https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=400'],
-      sellerId: demoUser.id,
+      sellerId: users[3].id,
       isAvailable: true,
     },
     {
@@ -123,9 +127,9 @@ async function seed() {
       price: 35.00,
       category: 'electronics' as const,
       condition: 'new' as const,
-      department: 'Electrical Engineering',
+      department: 'EEE',
       images: ['https://images.unsplash.com/photo-1553406830-ef2513450d76?w=400'],
-      sellerId: demoUser.id,
+      sellerId: users[1].id,
       isAvailable: true,
     },
     {
@@ -134,9 +138,31 @@ async function seed() {
       price: 40.00,
       category: 'books' as const,
       condition: 'fair' as const,
-      department: 'Business Administration',
+      department: 'BBA',
       images: ['https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?w=400'],
-      sellerId: demoUser.id,
+      sellerId: users[2].id,
+      isAvailable: true,
+    },
+    {
+      title: 'Mechanical Engineering Handbook',
+      description: 'Shigley\'s Mechanical Engineering Design, 11th Edition. Essential for ME students.',
+      price: 65.00,
+      category: 'books' as const,
+      condition: 'good' as const,
+      department: 'ME',
+      images: ['https://images.unsplash.com/photo-1589998059171-988d887df646?w=400'],
+      sellerId: users[3].id,
+      isAvailable: true,
+    },
+    {
+      title: 'Wireless Keyboard & Mouse Combo',
+      description: 'Logitech MK270 wireless combo. Used for one semester, works great.',
+      price: 25.00,
+      category: 'electronics' as const,
+      condition: 'good' as const,
+      department: 'CSE',
+      images: ['https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400'],
+      sellerId: users[0].id,
       isAvailable: true,
     },
   ];

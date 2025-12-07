@@ -1,6 +1,4 @@
-// ============================================
-// CampusMarket - Profile Screen
-// ============================================
+//Profile
 
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';

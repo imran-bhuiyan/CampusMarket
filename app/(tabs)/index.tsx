@@ -1,25 +1,10 @@
-// ============================================
-// CampusMarket - Home Feed Screen
-// ============================================
+//Home page
 
 import { Image } from 'expo-image';
 import { BookOpen, Clock, Laptop, MapPin, Package, Tag, User } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-    FlatList,
-    Pressable,
-    RefreshControl,
-    StyleSheet,
-    View,
-} from 'react-native';
-import {
-    ActivityIndicator,
-    Card,
-    Chip,
-    Searchbar,
-    Text,
-    useTheme,
-} from 'react-native-paper';
+import {FlatList, Pressable, RefreshControl, StyleSheet, View, } from 'react-native';
+import { ActivityIndicator, Card, Chip, Searchbar, Text, useTheme, } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/contexts/AuthContext';

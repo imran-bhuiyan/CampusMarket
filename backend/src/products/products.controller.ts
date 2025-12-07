@@ -1,6 +1,4 @@
-// ============================================
-// CampusMarket - Products Controller
-// ============================================
+//Products Controller
 
 import {
     Body,

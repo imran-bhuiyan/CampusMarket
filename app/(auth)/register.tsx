@@ -1,3 +1,5 @@
+//Register Screen
+
 import { Link } from 'expo-router';
 import { Building2, ChevronDown, Lock, Mail, ShoppingBag, User } from 'lucide-react-native';
 import React, { useState } from 'react';

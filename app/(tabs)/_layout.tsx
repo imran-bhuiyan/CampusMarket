@@ -1,6 +1,4 @@
-// ============================================
-// CampusMarket - Tabs Layout
-// ============================================
+//Tabs layout
 
 import { Tabs } from 'expo-router';
 import { Home, User } from 'lucide-react-native';

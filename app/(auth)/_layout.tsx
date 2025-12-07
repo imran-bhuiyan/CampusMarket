@@ -1,6 +1,4 @@
-// ============================================
-// CampusMarket - Auth Layout
-// ============================================
+//Authentication layout 
 
 import { Stack } from 'expo-router';
 

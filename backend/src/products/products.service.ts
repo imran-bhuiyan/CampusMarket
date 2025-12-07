@@ -1,6 +1,4 @@
-// ============================================
-// CampusMarket - Products Service
-// ============================================
+//Products Service
 
 import {
     ForbiddenException,
