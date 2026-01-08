@@ -50,7 +50,10 @@ export class ProductsService {
     const queryBuilder = this.productRepository
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.seller', 'seller')
-      .where('product.isAvailable = :isAvailable', { isAvailable: true });
+      .where('product.isAvailable = :isAvailable', { isAvailable: true })
+      .andWhere('product.moderationStatus = :moderationStatus', {
+        moderationStatus: 'approved',
+      });
 
     if (category) {
       queryBuilder.andWhere('product.category = :category', { category });
@@ -123,5 +126,26 @@ export class ProductsService {
     }
 
     await this.productRepository.remove(product);
+  }
+
+  async findPending(): Promise<Product[]> {
+    return this.productRepository.find({
+      where: { moderationStatus: 'pending' },
+      order: { createdAt: 'DESC' },
+      relations: ['seller'],
+    });
+  }
+
+  async approveProduct(id: number): Promise<Product> {
+    const product = await this.findOne(id);
+    product.moderationStatus = 'approved';
+    return this.productRepository.save(product);
+  }
+
+  async rejectProduct(id: number): Promise<Product> {
+    const product = await this.findOne(id);
+    product.moderationStatus = 'rejected';
+    product.isAvailable = false;
+    return this.productRepository.save(product);
   }
 }

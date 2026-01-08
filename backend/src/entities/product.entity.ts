@@ -15,6 +15,7 @@ import { User } from './user.entity';
 
 export type ProductCategory = 'books' | 'electronics' | 'clothing' | 'furniture' | 'other';
 export type ProductCondition = 'new' | 'like_new' | 'good' | 'fair';
+export type ModerationStatus = 'pending' | 'approved' | 'rejected';
 
 @Entity('products')
 export class Product {
@@ -41,6 +42,13 @@ export class Product {
 
   @Column('simple-array')
   images: string[];
+
+  @Column({
+    type: 'enum',
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending',
+  })
+  moderationStatus: ModerationStatus;
 
   @Column({ default: true })
   isAvailable: boolean;

@@ -13,6 +13,7 @@ import {
     Request,
     UseGuards,
 } from '@nestjs/common';
+import { AdminGuard } from '../auth/admin.guard';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { User } from '../entities/user.entity';
 import { CreateProductDto, UpdateProductDto } from './dto';
@@ -46,6 +47,24 @@ export class ProductsController {
       department,
       search,
     });
+  }
+
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @Get('pending')
+  findPending() {
+    return this.productsService.findPending();
+  }
+
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @Patch(':id/approve')
+  approve(@Param('id', ParseIntPipe) id: number) {
+    return this.productsService.approveProduct(id);
+  }
+
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @Patch(':id/reject')
+  reject(@Param('id', ParseIntPipe) id: number) {
+    return this.productsService.rejectProduct(id);
   }
 
   @Get(':id')

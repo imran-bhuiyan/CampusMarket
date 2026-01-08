@@ -1,7 +1,7 @@
 //Tabs layout
 
 import { Tabs } from 'expo-router';
-import { Home, User } from 'lucide-react-native';
+import { Home, ShieldCheck, User } from 'lucide-react-native';
 import React from 'react';
 
 import { Colors } from '@/constants/theme';
@@ -28,6 +28,14 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
+        }}
+      />
+      {/* New Admin Tab */}
+      <Tabs.Screen
+        name="admin"
+        options={{
+          title: 'Admin',
+          tabBarIcon: ({ color, size }) => <ShieldCheck size={size} color={color} />,
         }}
       />
       <Tabs.Screen
