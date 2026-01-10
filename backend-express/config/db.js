@@ -49,10 +49,19 @@ async function initDatabase() {
         department VARCHAR(255) NOT NULL,
         profilePicture VARCHAR(512) NULL,
         role ENUM('user','admin') NOT NULL DEFAULT 'user',
+        isBanned TINYINT(1) NOT NULL DEFAULT 0,
         createdAt DATETIME NOT NULL,
         updatedAt DATETIME NOT NULL
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
+
+    // Add isBanned column if it doesn't exist (for existing databases)
+    try {
+      await conn.query(`ALTER TABLE users ADD COLUMN isBanned TINYINT(1) NOT NULL DEFAULT 0`);
+      console.log('✅ Added isBanned column to users table');
+    } catch (alterErr) {
+      // Column already exists, ignore the error
+    }
 
     await conn.query(`
       CREATE TABLE IF NOT EXISTS products (
