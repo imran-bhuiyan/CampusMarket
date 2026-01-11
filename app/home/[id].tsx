@@ -13,11 +13,14 @@ import {
     MapPin,
     MessageCircle,
     Package,
+    Phone,
     User,
 } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
+    Alert,
     Dimensions,
+    Linking,
     ScrollView,
     StyleSheet,
     View,
@@ -67,6 +70,56 @@ export default function ProductDetailsScreen() {
         }
     };
 
+    // ---------- Contact Seller Logic ----------
+
+    const handleContactSeller = async () => {
+        const rawPhone = product?.seller?.phone;
+
+        if (!rawPhone) {
+            Alert.alert(
+                'Unavailable',
+                "This seller hasn't provided a phone number."
+            );
+            return;
+        }
+
+        // Remove + and any spaces/dashes from phone number for WhatsApp
+        const phoneNumber = rawPhone.replace(/[+\s-]/g, '');
+
+        // Format the message for WhatsApp
+        const message = `Hi, I'm interested in your item "${product?.title}" listed on CampusMarket. Is it still available?`;
+
+        // Use Universal Link format (works on Mobile + Desktop + Web)
+        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+
+        try {
+            // Try to open WhatsApp
+            const supported = await Linking.canOpenURL(whatsappUrl);
+
+            if (supported) {
+                await Linking.openURL(whatsappUrl);
+            } else {
+                // Fallback: Ask to call instead
+                Alert.alert(
+                    'WhatsApp Not Found',
+                    'Could not open WhatsApp. Do you want to call the seller instead?',
+                    [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                            text: 'Call',
+                            onPress: () => Linking.openURL(`tel:${rawPhone}`),
+                        },
+                    ]
+                );
+            }
+        } catch (err) {
+            console.error('Contact error:', err);
+            Alert.alert('Error', 'Could not contact seller.');
+        }
+    };
+
+    // ---------- Helper Functions ----------
+
     const getCategoryIcon = (category: string) => {
         switch (category) {
             case 'books':
@@ -93,6 +146,8 @@ export default function ProductDetailsScreen() {
         }
         return `${API_BASE_URL}${imagePath}`;
     };
+
+    // ---------- Render States ----------
 
     // Loading state
     if (loading) {
@@ -139,6 +194,8 @@ export default function ProductDetailsScreen() {
             </SafeAreaView>
         );
     }
+
+    // ---------- Main Render ----------
 
     return (
         <SafeAreaView
@@ -292,13 +349,21 @@ export default function ProductDetailsScreen() {
                                 <Text variant="bodySmall" style={{ color: theme.colors.outline }}>
                                     {product.seller?.department || 'Department not specified'}
                                 </Text>
+                                {product.seller?.phone && (
+                                    <View style={styles.phoneRow}>
+                                        <Phone size={12} color={theme.colors.outline} />
+                                        <Text variant="bodySmall" style={{ color: theme.colors.outline }}>
+                                            {product.seller.phone}
+                                        </Text>
+                                    </View>
+                                )}
                             </View>
                         </View>
                     </View>
                 </View>
             </ScrollView>
 
-            {/* Contact Button */}
+            {/* Contact Button - WhatsApp Green */}
             <View
                 style={[
                     styles.footer,
@@ -313,17 +378,17 @@ export default function ProductDetailsScreen() {
                     icon={() => <MessageCircle size={20} color="#fff" />}
                     style={styles.contactButton}
                     contentStyle={styles.contactButtonContent}
-                    onPress={() => {
-                        // TODO: Implement contact/chat functionality
-                        console.log('Contact seller:', product.seller?.name);
-                    }}
+                    buttonColor="#25D366"
+                    onPress={handleContactSeller}
                 >
-                    Contact Seller
+                    Contact Seller via WhatsApp
                 </Button>
             </View>
         </SafeAreaView>
     );
 }
+
+// ---------- Styles ----------
 
 const styles = StyleSheet.create({
     container: {
@@ -408,6 +473,12 @@ const styles = StyleSheet.create({
     },
     sellerInfo: {
         flex: 1,
+    },
+    phoneRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: 4,
     },
     footer: {
         padding: 16,

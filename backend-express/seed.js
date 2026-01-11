@@ -38,15 +38,15 @@ async function seed() {
     console.log('👑 Admin created: Admin User');
   }
 
-  // Create demo users
+  // Create demo users with phone numbers
   const usersData = [
-    { email: 'sarah.chen@campus.edu', name: 'Sarah Chen', department: 'CSE' },
-    { email: 'james.wilson@campus.edu', name: 'James Wilson', department: 'EEE' },
-    { email: 'emily.rodriguez@campus.edu', name: 'Emily Rodriguez', department: 'BBA' },
-    { email: 'michael.ahmed@campus.edu', name: 'Michael Ahmed', department: 'ME' },
-    { email: 'priya.sharma@campus.edu', name: 'Priya Sharma', department: 'CSE' },
-    { email: 'david.kim@campus.edu', name: 'David Kim', department: 'CSE' },
-    { email: 'lisa.johnson@campus.edu', name: 'Lisa Johnson', department: 'BBA' },
+    { email: 'sarah.chen@campus.edu', name: 'Sarah Chen', department: 'CSE', phone: '+8801712345678' },
+    { email: 'james.wilson@campus.edu', name: 'James Wilson', department: 'EEE', phone: '+8801812345678' },
+    { email: 'emily.rodriguez@campus.edu', name: 'Emily Rodriguez', department: 'BBA', phone: '+8801912345678' },
+    { email: 'michael.ahmed@campus.edu', name: 'Michael Ahmed', department: 'ME', phone: '+8801612345678' },
+    { email: 'priya.sharma@campus.edu', name: 'Priya Sharma', department: 'CSE', phone: '+8801512345678' },
+    { email: 'david.kim@campus.edu', name: 'David Kim', department: 'CSE', phone: '+8801412345678' },
+    { email: 'lisa.johnson@campus.edu', name: 'Lisa Johnson', department: 'BBA', phone: '+8801312345678' },
   ];
 
   const userIds = [];
@@ -58,9 +58,9 @@ async function seed() {
 
     if (existing.length === 0) {
       const [result] = await connection.execute(
-        `INSERT INTO users (email, password, name, department, role, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, 'user', NOW(), NOW())`,
-        [userData.email, hashedPassword, userData.name, userData.department]
+        `INSERT INTO users (email, password, name, department, phone, role, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, 'user', NOW(), NOW())`,
+        [userData.email, hashedPassword, userData.name, userData.department, userData.phone]
       );
       userIds.push(result.insertId);
       console.log(`✅ User created: ${userData.name}`);

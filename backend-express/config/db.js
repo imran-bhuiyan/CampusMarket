@@ -47,6 +47,7 @@ async function initDatabase() {
         password VARCHAR(255) NOT NULL,
         name VARCHAR(255) NOT NULL,
         department VARCHAR(255) NOT NULL,
+        phone VARCHAR(20) NULL,
         profilePicture VARCHAR(512) NULL,
         role ENUM('user','admin') NOT NULL DEFAULT 'user',
         createdAt DATETIME NOT NULL,

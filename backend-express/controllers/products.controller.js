@@ -32,6 +32,7 @@ function formatProduct(product) {
       email: product.sellerEmail,
       name: product.sellerName,
       department: product.sellerDepartment,
+      phone: product.sellerPhone || null,
       profilePicture: product.sellerProfilePicture || null,
       role: product.sellerRole,
       createdAt: product.sellerCreatedAt,
@@ -68,7 +69,7 @@ async function createProduct(req, res) {
     // Fetch the created product with seller info
     const [products] = await pool.execute(
       `SELECT p.*, u.name as sellerName, u.email as sellerEmail, u.department as sellerDepartment,
-              u.profilePicture as sellerProfilePicture, u.role as sellerRole,
+              u.phone as sellerPhone, u.profilePicture as sellerProfilePicture, u.role as sellerRole,
               u.createdAt as sellerCreatedAt, u.updatedAt as sellerUpdatedAt
        FROM products p
        LEFT JOIN users u ON p.sellerId = u.id
@@ -126,7 +127,7 @@ async function getProducts(req, res) {
     // Get paginated products with seller info
     const [products] = await pool.execute(
       `SELECT p.*, u.name as sellerName, u.email as sellerEmail, u.department as sellerDepartment,
-              u.profilePicture as sellerProfilePicture, u.role as sellerRole,
+              u.phone as sellerPhone, u.profilePicture as sellerProfilePicture, u.role as sellerRole,
               u.createdAt as sellerCreatedAt, u.updatedAt as sellerUpdatedAt
        FROM products p
        LEFT JOIN users u ON p.sellerId = u.id
@@ -162,7 +163,7 @@ async function getPendingProducts(req, res) {
   try {
     const [products] = await pool.execute(
       `SELECT p.*, u.name as sellerName, u.email as sellerEmail, u.department as sellerDepartment,
-              u.profilePicture as sellerProfilePicture, u.role as sellerRole,
+              u.phone as sellerPhone, u.profilePicture as sellerProfilePicture, u.role as sellerRole,
               u.createdAt as sellerCreatedAt, u.updatedAt as sellerUpdatedAt
        FROM products p
        LEFT JOIN users u ON p.sellerId = u.id
@@ -190,7 +191,7 @@ async function getProduct(req, res) {
 
     const [products] = await pool.execute(
       `SELECT p.*, u.name as sellerName, u.email as sellerEmail, u.department as sellerDepartment,
-              u.profilePicture as sellerProfilePicture, u.role as sellerRole,
+              u.phone as sellerPhone, u.profilePicture as sellerProfilePicture, u.role as sellerRole,
               u.createdAt as sellerCreatedAt, u.updatedAt as sellerUpdatedAt
        FROM products p
        LEFT JOIN users u ON p.sellerId = u.id
@@ -275,7 +276,7 @@ async function updateProduct(req, res) {
     // Fetch and return updated product
     const [updatedProducts] = await pool.execute(
       `SELECT p.*, u.name as sellerName, u.email as sellerEmail, u.department as sellerDepartment,
-              u.profilePicture as sellerProfilePicture, u.role as sellerRole,
+              u.phone as sellerPhone, u.profilePicture as sellerProfilePicture, u.role as sellerRole,
               u.createdAt as sellerCreatedAt, u.updatedAt as sellerUpdatedAt
        FROM products p
        LEFT JOIN users u ON p.sellerId = u.id
@@ -360,7 +361,7 @@ async function approveProduct(req, res) {
     // Fetch and return updated product
     const [updatedProducts] = await pool.execute(
       `SELECT p.*, u.name as sellerName, u.email as sellerEmail, u.department as sellerDepartment,
-              u.profilePicture as sellerProfilePicture, u.role as sellerRole,
+              u.phone as sellerPhone, u.profilePicture as sellerProfilePicture, u.role as sellerRole,
               u.createdAt as sellerCreatedAt, u.updatedAt as sellerUpdatedAt
        FROM products p
        LEFT JOIN users u ON p.sellerId = u.id
@@ -405,7 +406,7 @@ async function rejectProduct(req, res) {
     // Fetch and return updated product
     const [updatedProducts] = await pool.execute(
       `SELECT p.*, u.name as sellerName, u.email as sellerEmail, u.department as sellerDepartment,
-              u.profilePicture as sellerProfilePicture, u.role as sellerRole,
+              u.phone as sellerPhone, u.profilePicture as sellerProfilePicture, u.role as sellerRole,
               u.createdAt as sellerCreatedAt, u.updatedAt as sellerUpdatedAt
        FROM products p
        LEFT JOIN users u ON p.sellerId = u.id

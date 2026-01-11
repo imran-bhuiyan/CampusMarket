@@ -56,7 +56,7 @@ export interface Product {
   department: string;
   images: string[];
   sellerId: number;
-  seller: Pick<User, 'id' | 'name' | 'department'>;
+  seller: Pick<User, 'id' | 'name' | 'department'> & { phone?: string };
   isAvailable: boolean;
   createdAt: string;
   updatedAt: string;
