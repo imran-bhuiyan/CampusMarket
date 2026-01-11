@@ -15,7 +15,7 @@ async function seed() {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT, 10) || 3306,
     user: process.env.DB_USERNAME || 'root',
-    password: process.env.DB_PASSWORD || '1234',
+    password: process.env.DB_PASSWORD ?? '',
     database: process.env.DB_DATABASE || 'campus_market',
   });
 

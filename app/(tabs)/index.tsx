@@ -1,39 +1,124 @@
-//Home page
+// ============================================
+// CampusMarket - Buyer Home Screen
+// ============================================
+// Main product feed with server-side search, filters, and navigation.
 
 import { Image } from 'expo-image';
-import { BookOpen, Clock, Laptop, MapPin, Package, Tag, User } from 'lucide-react-native';
-import React, { useCallback, useEffect, useState } from 'react';
-import {FlatList, Pressable, RefreshControl, StyleSheet, View, } from 'react-native';
-import { ActivityIndicator, Card, Chip, Searchbar, Text, useTheme, } from 'react-native-paper';
+import { useRouter } from 'expo-router';
+import {
+  BookOpen,
+  Clock,
+  Filter,
+  Laptop,
+  MapPin,
+  Package,
+  ShoppingBag,
+  User
+} from 'lucide-react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  View,
+} from 'react-native';
+import {
+  ActivityIndicator,
+  Badge,
+  Card,
+  Chip,
+  IconButton,
+  Searchbar,
+  Text,
+  useTheme,
+} from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FilterModal, type FilterValues } from '@/components/FilterModal';
 import { useAuth } from '@/contexts/AuthContext';
-import productService from '@/services/product.service';
+import { useDebounce } from '@/hooks/useDebounce';
+import productService, { type GetProductsParams } from '@/services/product.service';
 import type { Product } from '@/types';
+
+// ---------- Constants ----------
+
+const DEFAULT_FILTERS: FilterValues = {
+  category: '',
+  department: '',
+  minPrice: '',
+  maxPrice: '',
+};
+
+// ---------- Component ----------
 
 export default function HomeScreen() {
   const theme = useTheme();
+  const router = useRouter();
   const { user } = useAuth();
-  
+
+  // Data state
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch products on mount
+  // Search & filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<FilterValues>(DEFAULT_FILTERS);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+
+  // Debounce search query by 500ms
+  const debouncedSearch = useDebounce(searchQuery, 500);
+
+  // Count active filters for badge
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.category) count++;
+    if (filters.department) count++;
+    if (filters.minPrice) count++;
+    if (filters.maxPrice) count++;
+    return count;
+  }, [filters]);
+
+  // Fetch products when debounced search or filters change
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [debouncedSearch, filters]);
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await productService.getProducts({ limit: 20 });
+
+      // Build query params
+      const params: GetProductsParams = {
+        limit: 50,
+      };
+
+      if (debouncedSearch.trim()) {
+        params.search = debouncedSearch.trim();
+      }
+
+      if (filters.category) {
+        params.category = filters.category;
+      }
+
+      if (filters.department.trim()) {
+        params.department = filters.department.trim();
+      }
+
+      if (filters.minPrice) {
+        params.minPrice = parseInt(filters.minPrice, 10);
+      }
+
+      if (filters.maxPrice) {
+        params.maxPrice = parseInt(filters.maxPrice, 10);
+      }
+
+      const response = await productService.getProducts(params);
       setProducts(response.data);
     } catch (error) {
       console.error('Error fetching products:', error);
-      // For demo: show placeholder data if backend is not running
-      setProducts(PLACEHOLDER_PRODUCTS);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -43,12 +128,20 @@ export default function HomeScreen() {
     setRefreshing(true);
     await fetchProducts();
     setRefreshing(false);
-  }, []);
+  }, [debouncedSearch, filters]);
 
-  const filteredProducts = products.filter(product =>
-    product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.department.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleApplyFilters = (newFilters: FilterValues) => {
+    setFilters(newFilters);
+  };
+
+  const handleProductPress = (productId: number) => {
+    router.push({
+      pathname: '/home/[id]',
+      params: { id: productId },
+    });
+  };
+
+  // ---------- Helper Functions ----------
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -72,105 +165,235 @@ export default function HomeScreen() {
     return `${Math.floor(diffDays / 7)}w ago`;
   };
 
+  // ---------- Render Functions ----------
+
   const renderProductCard = ({ item }: { item: Product }) => (
-    
-      <Pressable style={styles.cardContainer}>
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]} mode="elevated">
-          {/* Image with Category Badge */}
-          <View style={styles.imageContainer}>
-            <Image
-              source={{ uri: item.images[0] || 'https://via.placeholder.com/300x200' }}
-              style={styles.cardImage}
-              contentFit="cover"
-            />
-            {/* Category Badge */}
-            <View style={[styles.categoryBadge, { backgroundColor: theme.colors.surface }]}>
-              {getCategoryIcon(item.category)}
-              <Text variant="labelSmall" style={{ color: theme.colors.primary, textTransform: 'capitalize' }}>
-                {item.category}
+    <Pressable
+      style={styles.cardContainer}
+      onPress={() => handleProductPress(item.id)}
+    >
+      <Card
+        style={[styles.card, { backgroundColor: theme.colors.surface }]}
+        mode="elevated"
+      >
+        {/* Image with Category Badge */}
+        <View style={styles.imageContainer}>
+          <Image
+            source={{
+              uri: item.images?.[0] || 'https://via.placeholder.com/300x200',
+            }}
+            style={styles.cardImage}
+            contentFit="cover"
+          />
+          {/* Category Badge */}
+          <View
+            style={[
+              styles.categoryBadge,
+              { backgroundColor: theme.colors.surface },
+            ]}
+          >
+            {getCategoryIcon(item.category)}
+            <Text
+              variant="labelSmall"
+              style={{
+                color: theme.colors.primary,
+                textTransform: 'capitalize',
+              }}
+            >
+              {item.category}
+            </Text>
+          </View>
+        </View>
+
+        <Card.Content style={styles.cardContent}>
+          {/* Title */}
+          <Text
+            variant="titleMedium"
+            numberOfLines={2}
+            style={{
+              fontWeight: '600',
+              color: theme.colors.onBackground,
+              marginBottom: 6,
+              lineHeight: 20,
+            }}
+          >
+            {item.title}
+          </Text>
+
+          {/* Price */}
+          <Text
+            variant="titleLarge"
+            style={{
+              fontWeight: 'bold',
+              color: theme.colors.primary,
+              marginBottom: 8,
+            }}
+          >
+            ৳{Number(item.price).toFixed(0)}
+          </Text>
+
+          {/* Department */}
+          <View style={styles.metaRow}>
+            <View style={styles.metaItem}>
+              <MapPin size={12} color={theme.colors.outline} />
+              <Text
+                variant="labelSmall"
+                numberOfLines={1}
+                style={{ color: theme.colors.outline, flex: 1 }}
+              >
+                {item.department}
               </Text>
             </View>
           </View>
 
-          <Card.Content style={styles.cardContent}>
-            {/* Title */}
-            <Text variant="titleMedium" numberOfLines={2} style={{ fontWeight: '600', color: theme.colors.onBackground, marginBottom: 6, lineHeight: 20 }}>
-              {item.title}
-            </Text>
-
-            {/* Price */}
-            <Text variant="titleLarge" style={{ fontWeight: 'bold', color: theme.colors.primary, marginBottom: 8 }}>
-              ৳{Number(item.price).toFixed(0)}
-            </Text>
-
-            {/* Department */}
-            <View style={styles.metaRow}>
-              <View style={styles.metaItem}>
-                <MapPin size={12} color={theme.colors.outline} />
-                <Text variant="labelSmall" numberOfLines={1} style={{ color: theme.colors.outline, flex: 1 }}>
-                  {item.department}
-                </Text>
-              </View>
-            </View>
-
-            {/* Seller Info */}
-            <View style={styles.metaRow}>
-              <View style={styles.metaItem}>
-                <User size={12} color={theme.colors.outline} />
-                <Text variant="labelSmall" numberOfLines={1} style={{ color: theme.colors.outline }}>
-                  {item.seller?.name || 'Unknown'}
-                </Text>
-              </View>
-            </View>
-
-            {/* Bottom Row: Condition & Time */}
-            <View style={styles.bottomRow}>
-              <Chip 
-                compact 
-                style={[styles.conditionChip, { backgroundColor: theme.colors.primaryContainer }]}
-                textStyle={{ fontSize: 10, textTransform: 'capitalize', color: theme.colors.primary }}
+          {/* Seller Info */}
+          <View style={styles.metaRow}>
+            <View style={styles.metaItem}>
+              <User size={12} color={theme.colors.outline} />
+              <Text
+                variant="labelSmall"
+                numberOfLines={1}
+                style={{ color: theme.colors.outline }}
               >
-                {item.condition.replace('_', ' ')}
-              </Chip>
-              <View style={styles.timeContainer}>
-                <Clock size={10} color={theme.colors.outline} />
-                <Text variant="labelSmall" style={{ color: theme.colors.outline, fontSize: 10 }}>
-                  {formatTimeAgo(item.createdAt)}
-                </Text>
-              </View>
+                {item.seller?.name || 'Unknown'}
+              </Text>
             </View>
-          </Card.Content>
-        </Card>
-      </Pressable>
-    );
+          </View>
+
+          {/* Bottom Row: Condition & Time */}
+          <View style={styles.bottomRow}>
+            <Chip
+              compact
+              style={[
+                styles.conditionChip,
+                { backgroundColor: theme.colors.primaryContainer },
+              ]}
+              textStyle={{
+                fontSize: 10,
+                textTransform: 'capitalize',
+                color: theme.colors.primary,
+              }}
+            >
+              {item.condition.replace('_', ' ')}
+            </Chip>
+            <View style={styles.timeContainer}>
+              <Clock size={10} color={theme.colors.outline} />
+              <Text
+                variant="labelSmall"
+                style={{ color: theme.colors.outline, fontSize: 10 }}
+              >
+                {formatTimeAgo(item.createdAt)}
+              </Text>
+            </View>
+          </View>
+        </Card.Content>
+      </Card>
+    </Pressable>
+  );
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <ShoppingBag size={64} color={theme.colors.outline} />
+      <Text
+        variant="titleMedium"
+        style={{
+          fontWeight: '600',
+          color: theme.colors.onBackground,
+          marginTop: 16,
+        }}
+      >
+        No products found
+      </Text>
+      <Text
+        variant="bodyMedium"
+        style={{
+          color: theme.colors.outline,
+          textAlign: 'center',
+          marginTop: 8,
+        }}
+      >
+        {searchQuery || activeFilterCount > 0
+          ? 'Try adjusting your search or filters'
+          : 'Check back later for new listings'}
+      </Text>
+      {activeFilterCount > 0 && (
+        <Pressable
+          onPress={() => {
+            setFilters(DEFAULT_FILTERS);
+            setSearchQuery('');
+          }}
+          style={{ marginTop: 16 }}
+        >
+          <Text
+            variant="bodyMedium"
+            style={{ color: theme.colors.primary, fontWeight: '600' }}
+          >
+            Clear all filters
+          </Text>
+        </Pressable>
+      )}
+    </View>
+  );
+
+  // ---------- Main Render ----------
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      edges={['top']}
+    >
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
         <View>
           <Text variant="bodyMedium" style={{ color: theme.colors.outline }}>
             Welcome back,
           </Text>
-          <Text variant="headlineSmall" style={{ fontWeight: 'bold', color: theme.colors.onBackground }}>
+          <Text
+            variant="headlineSmall"
+            style={{ fontWeight: 'bold', color: theme.colors.onBackground }}
+          >
             {user?.name || 'Student'}
           </Text>
         </View>
       </View>
 
-      {/* Search Bar */}
-      <View style={[styles.searchContainer, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.surfaceVariant }]}>
+      {/* Search Bar with Filter Button */}
+      <View
+        style={[
+          styles.searchContainer,
+          {
+            backgroundColor: theme.colors.surface,
+            borderBottomColor: theme.colors.surfaceVariant,
+          },
+        ]}
+      >
         <Searchbar
-          placeholder="Search products or departments..."
+          placeholder="Search products..."
           onChangeText={setSearchQuery}
           value={searchQuery}
-          style={[styles.searchBar, { backgroundColor: theme.colors.surfaceVariant }]}
+          style={[
+            styles.searchBar,
+            { backgroundColor: theme.colors.surfaceVariant, flex: 1 },
+          ]}
           inputStyle={styles.searchInput}
         />
+        <View style={styles.filterButtonContainer}>
+          <IconButton
+            icon={() => <Filter size={22} color={theme.colors.primary} />}
+            mode="contained-tonal"
+            onPress={() => setFilterModalVisible(true)}
+            style={styles.filterButton}
+          />
+          {activeFilterCount > 0 && (
+            <Badge style={styles.filterBadge} size={18}>
+              {activeFilterCount}
+            </Badge>
+          )}
+        </View>
       </View>
 
       {/* Products Feed */}
-      {loading ? (
+      {loading && products.length === 0 ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text variant="bodyMedium" style={{ color: theme.colors.outline }}>
@@ -179,12 +402,15 @@ export default function HomeScreen() {
         </View>
       ) : (
         <FlatList
-          data={filteredProducts}
+          data={products}
           renderItem={renderProductCard}
           keyExtractor={(item) => item.id.toString()}
           numColumns={2}
-          contentContainerStyle={styles.listContent}
-          columnWrapperStyle={styles.columnWrapper}
+          contentContainerStyle={[
+            styles.listContent,
+            products.length === 0 && styles.emptyListContent,
+          ]}
+          columnWrapperStyle={products.length > 0 ? styles.columnWrapper : undefined}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -193,86 +419,22 @@ export default function HomeScreen() {
               colors={[theme.colors.primary]}
             />
           }
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Tag size={48} color={theme.colors.outline} />
-              <Text variant="titleMedium" style={{ fontWeight: '600', color: theme.colors.onBackground }}>
-                No products found
-              </Text>
-              <Text variant="bodyMedium" style={{ color: theme.colors.outline, textAlign: 'center' }}>
-                Try adjusting your search or check back later
-              </Text>
-            </View>
-          }
+          ListEmptyComponent={renderEmptyState}
         />
       )}
+
+      {/* Filter Modal */}
+      <FilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        onApply={handleApplyFilters}
+        initialValues={filters}
+      />
     </SafeAreaView>
   );
 }
 
-// Placeholder data for demo when backend is not running
-const PLACEHOLDER_PRODUCTS: Product[] = [
-  {
-    id: 1,
-    title: 'Calculus Textbook',
-    description: 'Stewart Calculus 8th Edition, great condition',
-    price: 45.00,
-    category: 'books',
-    condition: 'good',
-    department: 'Mathematics',
-    images: ['https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'],
-    sellerId: 1,
-    seller: { id: 1, name: 'John Doe', department: 'Mathematics' },
-    isAvailable: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    title: 'MacBook Pro 2021',
-    description: 'M1 Pro, 16GB RAM, excellent condition',
-    price: 1200.00,
-    category: 'electronics',
-    condition: 'like_new',
-    department: 'Computer Science',
-    images: ['https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400'],
-    sellerId: 2,
-    seller: { id: 2, name: 'Jane Smith', department: 'Computer Science' },
-    isAvailable: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 3,
-    title: 'Physics Lab Manual',
-    description: 'University Physics Lab Manual, barely used',
-    price: 25.00,
-    category: 'books',
-    condition: 'like_new',
-    department: 'Physics',
-    images: ['https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400'],
-    sellerId: 3,
-    seller: { id: 3, name: 'Mike Johnson', department: 'Physics' },
-    isAvailable: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 4,
-    title: 'Scientific Calculator',
-    description: 'TI-84 Plus, works perfectly',
-    price: 60.00,
-    category: 'electronics',
-    condition: 'good',
-    department: 'Engineering',
-    images: ['https://images.unsplash.com/photo-1564466809058-bf4114d55352?w=400'],
-    sellerId: 4,
-    seller: { id: 4, name: 'Sarah Wilson', department: 'Engineering' },
-    isAvailable: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+// ---------- Styles ----------
 
 const styles = StyleSheet.create({
   container: {
@@ -286,9 +448,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
+    gap: 8,
   },
   searchBar: {
     borderRadius: 12,
@@ -297,8 +462,22 @@ const styles = StyleSheet.create({
   searchInput: {
     fontSize: 14,
   },
+  filterButtonContainer: {
+    position: 'relative',
+  },
+  filterButton: {
+    margin: 0,
+  },
+  filterBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+  },
   listContent: {
     padding: 12,
+  },
+  emptyListContent: {
+    flexGrow: 1,
   },
   columnWrapper: {
     justifyContent: 'space-between',
@@ -370,6 +549,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 48,
-    gap: 12,
   },
 });

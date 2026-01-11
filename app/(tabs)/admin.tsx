@@ -47,7 +47,7 @@ export default function AdminScreen() {
     }
   }, [loadPending, tab]);
 
-  const handleAction = async (action: 'Approved' | 'Rejected', id: number) => {
+  const handleAction = async (action: 'Approved' | 'Rejected', id: number, title: string) => {
     if (!isAdmin) return;
     setActionLoadingId(id);
     try {
@@ -57,7 +57,7 @@ export default function AdminScreen() {
         await api.patch(`/products/${id}/reject`);
       }
       setItems((prev) => prev.filter((i) => i.id !== id));
-      Alert.alert(action, `Item ID ${id} has been ${action.toLowerCase()}.`);
+      Alert.alert(action, `"${title}" has been ${action.toLowerCase()}.`);
     } catch (e: any) {
       Alert.alert('Error', e?.response?.data?.message || 'Action failed');
     } finally {
@@ -86,85 +86,85 @@ export default function AdminScreen() {
       ) : (
         <>
 
-      <View style={{ paddingHorizontal: 16, marginBottom: 10 }}>
-        <SegmentedButtons
-          value={tab}
-          onValueChange={setTab}
-          buttons={[
-            { value: 'pending', label: 'Pending Items', icon: 'clock-outline' },
-            { value: 'users', label: 'Manage Users', icon: 'account-group' },
-          ]}
-        />
-      </View>
-
-      {tab === 'pending' ? (
-        loading ? (
-          <View style={styles.center}>
-            <ActivityIndicator size="large" color={theme.colors.primary} />
-            <Text style={{ marginTop: 12, color: theme.colors.outline }}>Loading pending items...</Text>
+          <View style={{ paddingHorizontal: 16, marginBottom: 10 }}>
+            <SegmentedButtons
+              value={tab}
+              onValueChange={setTab}
+              buttons={[
+                { value: 'pending', label: 'Pending Items', icon: 'clock-outline' },
+                { value: 'users', label: 'Manage Users', icon: 'account-group' },
+              ]}
+            />
           </View>
-        ) : (
-        <FlatList
-          data={items}
-          keyExtractor={item => String(item.id)}
-          contentContainerStyle={{ padding: 16, gap: 12 }}
-          ListEmptyComponent={
-            <Text style={{ textAlign: 'center', marginTop: 20, color: theme.colors.outline }}>
-              No pending items to review.
-            </Text>
-          }
-          renderItem={({ item }) => (
-            <Card style={{ backgroundColor: theme.colors.elevation.level1 }}>
-              <Card.Content>
-                <View style={styles.cardHeader}>
-                  <View>
-                    <Text variant="titleMedium" style={{ fontWeight: 'bold' }}>{item.title}</Text>
-                    <Text variant="bodySmall" style={{ color: theme.colors.secondary }}>
-                      {item.seller ? `${item.seller.name} (${item.seller.department})` : 'Unknown seller'}
-                    </Text>
-                  </View>
-                  <Chip compact>{item.category}</Chip>
-                </View>
-                
-                <Text variant="bodyMedium" style={{ marginVertical: 8 }}>Price: ৳{item.price}</Text>
 
-                <View style={styles.actionRow}>
-                  <Button 
-                    mode="contained" 
-                    buttonColor={theme.colors.error} 
-                    icon={() => <X size={18} color="white" />}
-                    onPress={() => handleAction('Rejected', item.id)}
-                    disabled={actionLoadingId === item.id}
-                    style={{ flex: 1, marginRight: 8 }}
-                  >
-                    Reject
-                  </Button>
-                  <Button 
-                    mode="contained" 
-                    buttonColor="#4caf50" 
-                    icon={() => <Check size={18} color="white" />}
-                    onPress={() => handleAction('Approved', item.id)}
-                    disabled={actionLoadingId === item.id}
-                    style={{ flex: 1 }}
-                  >
-                    Approve
-                  </Button>
-                </View>
-              </Card.Content>
-            </Card>
+          {tab === 'pending' ? (
+            loading ? (
+              <View style={styles.center}>
+                <ActivityIndicator size="large" color={theme.colors.primary} />
+                <Text style={{ marginTop: 12, color: theme.colors.outline }}>Loading pending items...</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={items}
+                keyExtractor={item => String(item.id)}
+                contentContainerStyle={{ padding: 16, gap: 12 }}
+                ListEmptyComponent={
+                  <Text style={{ textAlign: 'center', marginTop: 20, color: theme.colors.outline }}>
+                    No pending items to review.
+                  </Text>
+                }
+                renderItem={({ item }) => (
+                  <Card style={{ backgroundColor: theme.colors.elevation.level1 }}>
+                    <Card.Content>
+                      <View style={styles.cardHeader}>
+                        <View>
+                          <Text variant="titleMedium" style={{ fontWeight: 'bold' }}>{item.title}</Text>
+                          <Text variant="bodySmall" style={{ color: theme.colors.secondary }}>
+                            {item.seller ? `${item.seller.name} (${item.seller.department})` : 'Unknown seller'}
+                          </Text>
+                        </View>
+                        <Chip compact>{item.category}</Chip>
+                      </View>
+
+                      <Text variant="bodyMedium" style={{ marginVertical: 8 }}>Price: ৳{item.price}</Text>
+
+                      <View style={styles.actionRow}>
+                        <Button
+                          mode="contained"
+                          buttonColor={theme.colors.error}
+                          icon={() => <X size={18} color="white" />}
+                          onPress={() => handleAction('Rejected', item.id, item.title)}
+                          disabled={actionLoadingId === item.id}
+                          style={{ flex: 1, marginRight: 8 }}
+                        >
+                          Reject
+                        </Button>
+                        <Button
+                          mode="contained"
+                          buttonColor="#4caf50"
+                          icon={() => <Check size={18} color="white" />}
+                          onPress={() => handleAction('Approved', item.id, item.title)}
+                          disabled={actionLoadingId === item.id}
+                          style={{ flex: 1 }}
+                        >
+                          Approve
+                        </Button>
+                      </View>
+                    </Card.Content>
+                  </Card>
+                )}
+              />)
+          ) : (
+            <View style={styles.center}>
+              <ShieldAlert size={64} color={theme.colors.outline} />
+              <Text variant="titleMedium" style={{ marginTop: 16, color: theme.colors.outline }}>
+                User Management Coming Soon
+              </Text>
+              <Text variant="bodySmall" style={{ color: theme.colors.outline }}>
+                (This feature is scheduled for Update 2)
+              </Text>
+            </View>
           )}
-        />)
-      ) : (
-        <View style={styles.center}>
-          <ShieldAlert size={64} color={theme.colors.outline} />
-          <Text variant="titleMedium" style={{ marginTop: 16, color: theme.colors.outline }}>
-            User Management Coming Soon
-          </Text>
-          <Text variant="bodySmall" style={{ color: theme.colors.outline }}>
-            (This feature is scheduled for Update 2)
-          </Text>
-        </View>
-      )}
         </>
       )}
     </SafeAreaView>

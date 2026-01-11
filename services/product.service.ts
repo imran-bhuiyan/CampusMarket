@@ -3,9 +3,9 @@
 // ============================================
 
 import type {
-    CreateProductDTO,
-    PaginatedResponse,
-    Product
+  CreateProductDTO,
+  PaginatedResponse,
+  Product
 } from '@/types';
 import api from './api';
 
@@ -15,6 +15,8 @@ export interface GetProductsParams {
   category?: string;
   department?: string;
   search?: string;
+  minPrice?: number;
+  maxPrice?: number;
 }
 
 export const productService = {
