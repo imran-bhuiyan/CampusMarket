@@ -18,6 +18,7 @@ const { initDatabase, testConnection } = require('./config/db');
 // Import routes
 const authRoutes = require('./routes/auth.routes');
 const productsRoutes = require('./routes/products.routes');
+const adminRoutes = require('./routes/admin.routes');
 
 // Create Express app
 const app = express();
@@ -64,12 +65,13 @@ app.use('/uploads', express.static(uploadsDir));
 
 // Health check endpoint (like NestJS AppController.getHello())
 app.get('/', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'CampusMarket API - Express.js',
     version: '1.0.0',
     endpoints: {
       auth: '/auth',
       products: '/products',
+      admin: '/admin',
     }
   });
 });
@@ -77,6 +79,7 @@ app.get('/', (req, res) => {
 // Mount route modules
 app.use('/auth', authRoutes);
 app.use('/products', productsRoutes);
+app.use('/admin', adminRoutes);
 
 // ============================================
 // Error Handling
@@ -84,18 +87,18 @@ app.use('/products', productsRoutes);
 
 // 404 handler for undefined routes
 app.use((req, res) => {
-  res.status(404).json({ 
-    message: `Cannot ${req.method} ${req.path}`, 
-    statusCode: 404 
+  res.status(404).json({
+    message: `Cannot ${req.method} ${req.path}`,
+    statusCode: 404
   });
 });
 
 // Global error handler (catches unhandled errors)
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
-  res.status(500).json({ 
-    message: 'Internal server error', 
-    statusCode: 500 
+  res.status(500).json({
+    message: 'Internal server error',
+    statusCode: 500
   });
 });
 
@@ -117,12 +120,12 @@ async function bootstrap() {
 
   // Test connection (non-fatal)
   await testConnection();
-  
+
   // Start server regardless of DB state, so health endpoint works
   const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 CampusMarket API (Express) running on http://localhost:${PORT}`);
   });
-  
+
   server.on('error', (err) => {
     console.error('Server error:', err);
     process.exit(1);
