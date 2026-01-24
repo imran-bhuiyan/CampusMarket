@@ -37,6 +37,9 @@ export default function ProfileScreen() {
   });
   const [changingPassword, setChangingPassword] = useState(false);
 
+  // Image Preview Modal State
+  const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
+
   const handleLogout = async () => {
     await logout();
   };
@@ -253,29 +256,31 @@ export default function ProfileScreen() {
         <Card style={[styles.userCard, { backgroundColor: theme.colors.surface }]} mode="elevated">
           <Card.Content style={styles.userCardContent}>
             {/* Profile Picture with Edit Button */}
-            <Pressable onPress={showImageOptions} style={styles.avatarContainer}>
-              {getProfileImageUrl() ? (
-                <Image
-                  source={{ uri: getProfileImageUrl()! }}
-                  style={styles.profileImage}
-                  contentFit="cover"
-                />
-              ) : (
-                <Avatar.Text
-                  size={88}
-                  label={user?.name ? getInitials(user.name) : 'U'}
-                  style={{ backgroundColor: theme.colors.primary }}
-                />
-              )}
-              {/* Camera Icon Overlay */}
-              <View style={[styles.cameraButton, { backgroundColor: theme.colors.primary }]}>
-                {uploading ? (
-                  <ActivityIndicator size={16} color="#fff" />
+            <View style={styles.avatarContainer}>
+              <Pressable onPress={() => getProfileImageUrl() && setImagePreviewVisible(true)}>
+                {getProfileImageUrl() ? (
+                  <Image
+                    source={{ uri: getProfileImageUrl()! }}
+                    style={styles.profileImage}
+                    contentFit="cover"
+                  />
                 ) : (
-                  <Camera size={16} color="#fff" />
+                  <Avatar.Text
+                    size={88}
+                    label={user?.name ? getInitials(user.name) : 'U'}
+                    style={{ backgroundColor: theme.colors.primary }}
+                  />
                 )}
-              </View>
-            </Pressable>
+              </Pressable>
+              {/* Camera Icon Overlay - separate button for changing photo */}
+              <Pressable onPress={showImageOptions} style={[styles.cameraButton, { backgroundColor: '#1a1a2e' }]}>
+                {uploading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Camera size={18} color="#ffffff" strokeWidth={2.5} />
+                )}
+              </Pressable>
+            </View>
             <Text variant="headlineSmall" style={{ fontWeight: 'bold', color: theme.colors.onBackground, marginTop: 12 }}>
               {user?.name || 'Student'}
             </Text>
@@ -325,7 +330,7 @@ export default function ProfileScreen() {
                   Phone
                 </Text>
                 <Text variant="bodyLarge" style={{ color: theme.colors.onBackground, fontWeight: '500' }}>
-                  {user?.phone || 'Not provided'}
+                  {user?.phone ? user.phone.replace(/^\+?88/, '') : 'Not provided'}
                 </Text>
               </View>
             </View>
@@ -368,14 +373,7 @@ export default function ProfileScreen() {
             </Pressable>
           </Card>
 
-          <Card style={[styles.actionCard, { backgroundColor: theme.colors.surface, marginTop: 8 }]} mode="outlined">
-            <Card.Content style={styles.actionContent}>
-              <Text variant="bodyMedium" style={{ color: theme.colors.onBackground }}>
-                My Listings
-              </Text>
-              <ChevronRight size={20} color={theme.colors.outline} />
-            </Card.Content>
-          </Card>
+
         </View>
 
         {/* Logout Button */}
@@ -423,11 +421,9 @@ export default function ProfileScreen() {
               <TextInput
                 label="Email"
                 value={editForm.email}
-                onChangeText={(text) => setEditForm({ ...editForm, email: text })}
                 mode="outlined"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                style={styles.input}
+                disabled
+                style={[styles.input, { opacity: 0.6 }]}
                 left={<TextInput.Icon icon={() => <Mail size={20} color={theme.colors.outline} />} />}
               />
               <TextInput
@@ -519,6 +515,22 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* ========== Image Preview Modal ========== */}
+      <Modal visible={imagePreviewVisible} animationType="fade" transparent onRequestClose={() => setImagePreviewVisible(false)}>
+        <Pressable style={styles.imagePreviewOverlay} onPress={() => setImagePreviewVisible(false)}>
+          <Pressable onPress={() => setImagePreviewVisible(false)} style={styles.closePreviewButton}>
+            <X size={28} color="#fff" />
+          </Pressable>
+          {getProfileImageUrl() && (
+            <Image
+              source={{ uri: getProfileImageUrl()! }}
+              style={styles.fullscreenImage}
+              contentFit="contain"
+            />
+          )}
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -605,6 +617,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 16,
   },
   actionLeft: {
     flexDirection: 'row',
@@ -656,5 +669,23 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 16,
+  },
+  // Image Preview Modal Styles
+  imagePreviewOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closePreviewButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    padding: 8,
+  },
+  fullscreenImage: {
+    width: '90%',
+    height: '70%',
   },
 });

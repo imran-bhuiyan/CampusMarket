@@ -42,7 +42,7 @@ async function register(req, res) {
 
     // Fetch the created user (without password)
     const [users] = await pool.execute(
-      'SELECT id, email, name, department, profilePicture, role, createdAt, updatedAt FROM users WHERE id = ?',
+      'SELECT id, email, name, department, phone, profilePicture, role, createdAt, updatedAt FROM users WHERE id = ?',
       [userId]
     );
 
@@ -78,7 +78,7 @@ async function login(req, res) {
 
     // Find user by email
     const [users] = await pool.execute(
-      'SELECT id, email, password, name, department, profilePicture, role, createdAt, updatedAt FROM users WHERE email = ?',
+      'SELECT id, email, name, department, phone, password, profilePicture, role, createdAt, updatedAt FROM users WHERE email = ?',
       [email]
     );
 
@@ -129,7 +129,7 @@ async function getProfile(req, res) {
     const userId = req.user.id;
 
     const [users] = await pool.execute(
-      'SELECT id, email, name, department, profilePicture, role, createdAt, updatedAt FROM users WHERE id = ?',
+      'SELECT id, email, name, department, phone, profilePicture, role, createdAt, updatedAt FROM users WHERE id = ?',
       [userId]
     );
 
@@ -170,7 +170,7 @@ async function uploadProfilePicture(req, res) {
 
     // Fetch and return updated user
     const [users] = await pool.execute(
-      'SELECT id, email, name, department, profilePicture, role, createdAt, updatedAt FROM users WHERE id = ?',
+      'SELECT id, email, name, department, phone, profilePicture, role, createdAt, updatedAt FROM users WHERE id = ?',
       [userId]
     );
 
