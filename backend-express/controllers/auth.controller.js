@@ -181,9 +181,130 @@ async function uploadProfilePicture(req, res) {
   }
 }
 
+/**
+ * PATCH /auth/profile
+ * Update the authenticated user's profile info (name, email, phone, department).
+ * Requires: authMiddleware
+ */
+async function updateProfile(req, res) {
+  try {
+    const userId = req.user.id;
+    const { name, email, phone, department } = req.body;
+
+    // Check if email is being changed and if it's already taken
+    if (email) {
+      const [existing] = await pool.execute(
+        'SELECT id FROM users WHERE email = ? AND id != ?',
+        [email, userId]
+      );
+
+      if (existing.length > 0) {
+        return res.status(409).json({ message: 'Email already in use', statusCode: 409 });
+      }
+    }
+
+    // Build dynamic update query
+    const updates = [];
+    const values = [];
+
+    if (name) {
+      updates.push('name = ?');
+      values.push(name);
+    }
+    if (email) {
+      updates.push('email = ?');
+      values.push(email);
+    }
+    if (phone !== undefined) {
+      updates.push('phone = ?');
+      values.push(phone || null);
+    }
+    if (department) {
+      updates.push('department = ?');
+      values.push(department);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ message: 'No fields to update', statusCode: 400 });
+    }
+
+    updates.push('updatedAt = NOW()');
+    values.push(userId);
+
+    await pool.execute(
+      `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
+      values
+    );
+
+    // Fetch and return updated user
+    const [users] = await pool.execute(
+      'SELECT id, email, name, department, phone, profilePicture, role, createdAt, updatedAt FROM users WHERE id = ?',
+      [userId]
+    );
+
+    res.json(users[0]);
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ message: 'Internal server error', statusCode: 500 });
+  }
+}
+
+/**
+ * PATCH /auth/profile/password
+ * Update the authenticated user's password.
+ * Requires: authMiddleware, currentPassword verification
+ */
+async function updatePassword(req, res) {
+  try {
+    const userId = req.user.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current and new password are required', statusCode: 400 });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters', statusCode: 400 });
+    }
+
+    // Get current password hash
+    const [users] = await pool.execute(
+      'SELECT password FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (users.length === 0) {
+      return res.status(401).json({ message: 'User not found', statusCode: 401 });
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, users[0].password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Current password is incorrect', statusCode: 401 });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await pool.execute(
+      'UPDATE users SET password = ?, updatedAt = NOW() WHERE id = ?',
+      [hashedPassword, userId]
+    );
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Update password error:', error);
+    res.status(500).json({ message: 'Internal server error', statusCode: 500 });
+  }
+}
+
 module.exports = {
   register,
   login,
   getProfile,
   uploadProfilePicture,
+  updateProfile,
+  updatePassword,
 };

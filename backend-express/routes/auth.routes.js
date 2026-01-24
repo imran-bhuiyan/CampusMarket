@@ -40,4 +40,16 @@ router.get('/profile', authMiddleware, authController.getProfile);
  */
 router.patch('/profile/picture', authMiddleware, uploadProfilePicture, authController.uploadProfilePicture);
 
+/**
+ * PATCH /auth/profile
+ * Protected route - update profile info (name, email, phone, department)
+ */
+router.patch('/profile', authMiddleware, authController.updateProfile);
+
+/**
+ * PATCH /auth/profile/password
+ * Protected route - update password (requires current password)
+ */
+router.patch('/profile/password', authMiddleware, authController.updatePassword);
+
 module.exports = router;

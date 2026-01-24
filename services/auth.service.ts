@@ -3,10 +3,10 @@
 // ============================================
 
 import type {
-    AuthResponse,
-    LoginCredentials,
-    RegisterCredentials,
-    User,
+  AuthResponse,
+  LoginCredentials,
+  RegisterCredentials,
+  User,
 } from '@/types';
 
 import api from './api';
@@ -58,10 +58,10 @@ export const authService = {
    */
   uploadProfilePicture: async (imageUri: string): Promise<User> => {
     const formData = new FormData();
-    
+
     // Check if running on web (blob URL starts with 'blob:')
     const isWeb = imageUri.startsWith('blob:') || typeof window !== 'undefined' && window.document;
-    
+
     if (isWeb && imageUri.startsWith('blob:')) {
       // Web: fetch the blob and append it directly
       const response = await fetch(imageUri);
@@ -72,7 +72,7 @@ export const authService = {
       // Native: use the URI-based approach
       const uriParts = imageUri.split('.');
       const fileType = uriParts[uriParts.length - 1] || 'jpg';
-      
+
       formData.append('file', {
         uri: imageUri,
         name: `profile.${fileType}`,
@@ -84,6 +84,27 @@ export const authService = {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+    });
+    return data;
+  },
+
+  /**
+   * Update user profile (name, email, phone, department).
+   * Returns updated user data.
+   */
+  updateProfile: async (profileData: { name?: string; email?: string; phone?: string; department?: string }): Promise<User> => {
+    const { data } = await api.patch<User>('/auth/profile', profileData);
+    return data;
+  },
+
+  /**
+   * Update user password.
+   * Requires current password for verification.
+   */
+  updatePassword: async (currentPassword: string, newPassword: string): Promise<{ message: string }> => {
+    const { data } = await api.patch<{ message: string }>('/auth/profile/password', {
+      currentPassword,
+      newPassword,
     });
     return data;
   },
