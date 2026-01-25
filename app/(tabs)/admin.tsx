@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, Flag, Package, ShieldAlert, Users, X } from 'lucide-react-native';
+import { AlertTriangle, Check, Package, ShieldAlert, Users, X } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Switch, View } from 'react-native';
 import { Avatar, Button, Card, Chip, SegmentedButtons, Surface, Text, useTheme } from 'react-native-paper';
@@ -308,13 +308,13 @@ export default function AdminScreen() {
                 backgroundColor="#10b981"
                 subtitle={`+${stats.newListingsThisWeek} this week`}
               />
-              <StatCard
+              {/* <StatCard
                 title="Pending Reports"
                 value={stats.pendingReports}
                 icon={<Flag size={28} color="white" />}
                 backgroundColor="#f59e0b"
                 subtitle="Needs review"
-              />
+              /> */}
               <StatCard
                 title="Pending Listings"
                 value={stats.pendingListings}
