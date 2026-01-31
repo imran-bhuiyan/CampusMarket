@@ -105,7 +105,9 @@ api.interceptors.response.use(
     // Log other errors for debugging
     if (error.response) {
       const message = error.response.data?.message || 'An error occurred';
-      console.error('API Error:', status, message);
+      if (status !== 401) {
+        console.error('API Error:', status, message);
+      }
     } else if (error.request) {
       console.error('Network Error: No response from server');
     } else {

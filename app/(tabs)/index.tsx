@@ -3,6 +3,7 @@
 // ============================================
 // Main product feed with server-side search, filters, and navigation.
 
+import { useFocusEffect } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import {
@@ -15,7 +16,7 @@ import {
   ShoppingBag,
   User
 } from 'lucide-react-native';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -80,10 +81,15 @@ export default function HomeScreen() {
     return count;
   }, [filters]);
 
-  // Fetch products when debounced search or filters change
-  useEffect(() => {
-    fetchProducts();
-  }, [debouncedSearch, filters]);
+  // Fetch products when screen is focused or filters change.
+  // We use useFocusEffect instead of useEffect to ensure data is fresh when
+  // returning to the tab (e.g. after admin approval), while also handling
+  // initial load and filter changes.
+  useFocusEffect(
+    useCallback(() => {
+      fetchProducts();
+    }, [debouncedSearch, filters])
+  );
 
   const fetchProducts = async () => {
     try {
