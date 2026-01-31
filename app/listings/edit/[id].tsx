@@ -186,19 +186,38 @@ export default function EditListingScreen() {
       return;
     }
 
-    const payload: Partial<CreateProductDTO> & { isAvailable?: boolean } = {
-      title: title.trim(),
-      description: description.trim(),
-      price: Number(priceNumber),
-      department: department.trim(),
-      category,
-      condition,
-      images,
-      isAvailable,
-    };
-
     try {
       setSaving(true);
+
+      // Separate existing server URLs from new local images
+      // Server URLs start with http:// or https://
+      const existingServerUrls = images.filter(
+        uri => uri.startsWith('http://') || uri.startsWith('https://')
+      );
+      const newLocalImages = images.filter(
+        uri => !uri.startsWith('http://') && !uri.startsWith('https://')
+      );
+
+      // Upload new local images if there are any
+      let uploadedUrls: string[] = [];
+      if (newLocalImages.length > 0) {
+        uploadedUrls = await productService.uploadImages(newLocalImages);
+      }
+
+      // Combine existing server URLs with newly uploaded URLs
+      const finalImages = [...existingServerUrls, ...uploadedUrls];
+
+      const payload: Partial<CreateProductDTO> & { isAvailable?: boolean } = {
+        title: title.trim(),
+        description: description.trim(),
+        price: Number(priceNumber),
+        department: department.trim(),
+        category,
+        condition,
+        images: finalImages,
+        isAvailable,
+      };
+
       const updated = await productService.updateProduct(listingId, payload);
       setProduct(updated);
       Alert.alert('Saved', 'Listing updated successfully.', [

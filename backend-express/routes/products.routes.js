@@ -10,6 +10,7 @@ const router = express.Router();
 const productsController = require('../controllers/products.controller');
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 const { validateCreateProduct, validateUpdateProduct } = require('../middleware/validation');
+const { uploadProductImages } = require('../middleware/upload');
 
 /**
  * GET /products
@@ -19,6 +20,14 @@ const { validateCreateProduct, validateUpdateProduct } = require('../middleware/
  * Query params: page, limit, category, department, search
  */
 router.get('/', productsController.getProducts);
+
+/**
+ * POST /products/upload-images
+ * Protected route - requires JWT
+ * Uploads product images via multer, returns array of image URLs
+ * NOTE: This route MUST be defined BEFORE /:id to avoid matching 'upload-images' as an ID
+ */
+router.post('/upload-images', authMiddleware, uploadProductImages, productsController.uploadImages);
 
 /**
  * GET /products/pending

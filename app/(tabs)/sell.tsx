@@ -147,18 +147,22 @@ export default function SellScreen() {
       return;
     }
 
-    const payload: CreateProductDTO = {
-      title: title.trim(),
-      description: description.trim(),
-      price: Number(priceNumber),
-      category,
-      condition,
-      department: department.trim(),
-      images,
-    };
-
     try {
       setSubmitting(true);
+
+      // Upload images first to get server URLs
+      const uploadedImageUrls = await productService.uploadImages(images);
+
+      const payload: CreateProductDTO = {
+        title: title.trim(),
+        description: description.trim(),
+        price: Number(priceNumber),
+        category,
+        condition,
+        department: department.trim(),
+        images: uploadedImageUrls,
+      };
+
       const created = await productService.createProduct(payload);
       Alert.alert('Success', 'Your listing was submitted!', [
         {

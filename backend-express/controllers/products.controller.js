@@ -7,6 +7,32 @@
 const { pool } = require('../config/db');
 
 /**
+ * POST /products/upload-images
+ * Handles product image uploads via multer middleware.
+ * Returns array of relative image paths (e.g., /uploads/products/filename.jpg).
+ * Frontend should prepend API_BASE_URL for full URL.
+ * Requires: authMiddleware, uploadProductImages middleware
+ */
+async function uploadImages(req, res) {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: 'No images uploaded', statusCode: 400 });
+    }
+
+    // Return relative paths - frontend will prepend the correct API_BASE_URL
+    // This ensures emulators use 10.0.2.2 while web uses localhost
+    const imageUrls = req.files.map(
+      file => `/uploads/products/${file.filename}`
+    );
+
+    res.json({ images: imageUrls });
+  } catch (error) {
+    console.error('Upload images error:', error);
+    res.status(500).json({ message: 'Internal server error', statusCode: 500 });
+  }
+}
+
+/**
  * Helper function to format product with seller info
  * Replicates TypeORM eager loading of seller relation
  */
@@ -422,6 +448,7 @@ async function rejectProduct(req, res) {
 }
 
 module.exports = {
+  uploadImages,
   createProduct,
   getProducts,
   getProduct,
