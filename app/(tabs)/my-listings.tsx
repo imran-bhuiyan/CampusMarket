@@ -6,18 +6,21 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Pencil, Trash2 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import {
   ActivityIndicator,
   Button,
   Card,
   Chip,
+  Dialog,
   IconButton,
+  Portal,
   Text,
-  useTheme,
+  useTheme
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import Toast, { useToast } from '@/components/Toast';
 import { useAuth } from '@/contexts/AuthContext';
 import productService from '@/services/product.service';
 import type { Product } from '@/types';
@@ -30,6 +33,12 @@ export default function MyListingsScreen() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Delete dialog state
+  const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const { toast, showToast, hideToast } = useToast();
 
   const myProducts = useMemo(() => {
     if (!user) return [];
@@ -64,28 +73,30 @@ export default function MyListingsScreen() {
     router.push({ pathname: '/listings/edit/[id]', params: { id } });
   };
 
+  // Show delete confirmation dialog
   const handleDelete = (id: number) => {
-    Alert.alert(
-      'Delete listing?',
-      'This will permanently remove your listing.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await productService.deleteProduct(id);
-              setAllProducts(prev => prev.filter(p => p.id !== id));
-              Alert.alert('Deleted', 'Your listing was deleted.');
-            } catch (error: any) {
-              console.error('Delete listing error:', error);
-              Alert.alert('Error', error?.response?.data?.message || 'Failed to delete listing');
-            }
-          },
-        },
-      ]
-    );
+    setDeleteTargetId(id);
+    setDeleteDialogVisible(true);
+  };
+
+  // Actually perform the delete
+  const confirmDelete = async () => {
+    if (deleteTargetId === null) return;
+
+    try {
+      setDeleting(true);
+      await productService.deleteProduct(deleteTargetId);
+      setAllProducts(prev => prev.filter(p => p.id !== deleteTargetId));
+      setDeleteDialogVisible(false);
+      showToast('🗑️ Listing deleted successfully!', 'success', 3000);
+    } catch (error: any) {
+      console.error('Delete listing error:', error);
+      setDeleteDialogVisible(false);
+      showToast(error?.response?.data?.message || 'Failed to delete listing', 'error', 4000);
+    } finally {
+      setDeleting(false);
+      setDeleteTargetId(null);
+    }
   };
 
   const renderItem = ({ item }: { item: Product }) => (
@@ -174,6 +185,33 @@ export default function MyListingsScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         />
       )}
+
+      {/* Toast Notification */}
+      <Toast config={toast} onDismiss={hideToast} />
+
+      {/* Delete Confirmation Dialog - works on web and native */}
+      <Portal>
+        <Dialog visible={deleteDialogVisible} onDismiss={() => setDeleteDialogVisible(false)}>
+          <Dialog.Title>Delete listing?</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              This will permanently remove your listing. This action cannot be undone.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setDeleteDialogVisible(false)} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button
+              onPress={confirmDelete}
+              loading={deleting}
+              textColor={theme.colors.error}
+            >
+              Delete
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </SafeAreaView>
   );
 }

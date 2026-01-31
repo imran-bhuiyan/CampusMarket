@@ -20,6 +20,7 @@ import {
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import Toast, { useToast } from '@/components/Toast';
 import { useAuth } from '@/contexts/AuthContext';
 import productService from '@/services/product.service';
 import type { CreateProductDTO, ProductCategory, ProductCondition } from '@/types';
@@ -53,6 +54,7 @@ export default function SellScreen() {
 
   const [images, setImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const { toast, showToast, hideToast } = useToast();
 
   // web-only multiple file input
   const webFileInputRef = useRef<HTMLInputElement>(null);
@@ -164,27 +166,25 @@ export default function SellScreen() {
       };
 
       const created = await productService.createProduct(payload);
-      Alert.alert('Success', 'Your listing was submitted!', [
-        {
-          text: 'View',
-          onPress: () => router.push({ pathname: '/home/[id]', params: { id: created.id } }),
-        },
-        {
-          text: 'OK',
-          onPress: () => {
-            // reset form
-            setTitle('');
-            setPrice('');
-            setDescription('');
-            setCategory('other');
-            setCondition('good');
-            setImages([]);
-          },
-        },
-      ]);
+
+      // Show success toast
+      showToast('🎉 Your listing was submitted successfully!', 'success', 4000);
+
+      // Reset form
+      setTitle('');
+      setPrice('');
+      setDescription('');
+      setCategory('other');
+      setCondition('good');
+      setImages([]);
+
+      // Navigate after a brief delay to let user see the toast
+      setTimeout(() => {
+        router.push({ pathname: '/home/[id]', params: { id: created.id } });
+      }, 1500);
     } catch (error: any) {
       console.error('Create product error:', error);
-      Alert.alert('Error', error?.response?.data?.message || 'Failed to create listing');
+      showToast(error?.response?.data?.message || 'Failed to create listing', 'error', 4000);
     } finally {
       setSubmitting(false);
     }
@@ -248,8 +248,8 @@ export default function SellScreen() {
               )}
             </View>
 
-            <HelperText type={images.length === 0 ? 'error' : 'info'} visible>
-              {images.length === 0 ? 'Please add at least 1 photo.' : `Selected: ${images.length}/3`}
+            <HelperText type="error" visible={images.length === 0}>
+              Please add at least 1 photo.
             </HelperText>
           </Card.Content>
         </Card>
@@ -266,8 +266,8 @@ export default function SellScreen() {
               onChangeText={setTitle}
               placeholder="e.g., Calculus book (like new)"
             />
-            <HelperText type={title.trim().length < 3 ? 'error' : 'info'} visible>
-              {title.trim().length < 3 ? 'Title should be at least 3 characters.' : ' '}
+            <HelperText type="error" visible={title.trim().length > 0 && title.trim().length < 3}>
+              Title should be at least 3 characters.
             </HelperText>
 
             <TextInput
@@ -278,8 +278,8 @@ export default function SellScreen() {
               keyboardType="numeric"
               placeholder="e.g., 500"
             />
-            <HelperText type={!Number.isFinite(priceNumber) || priceNumber <= 0 ? 'error' : 'info'} visible>
-              {!Number.isFinite(priceNumber) || priceNumber <= 0 ? 'Enter a valid price.' : ' '}
+            <HelperText type="error" visible={price.length > 0 && (!Number.isFinite(priceNumber) || priceNumber <= 0)}>
+              Enter a valid price.
             </HelperText>
 
             <TextInput
@@ -289,8 +289,8 @@ export default function SellScreen() {
               onChangeText={setDepartment}
               placeholder="e.g., CSE"
             />
-            <HelperText type={department.trim().length < 2 ? 'error' : 'info'} visible>
-              {department.trim().length < 2 ? 'Department is required.' : ' '}
+            <HelperText type="error" visible={department.length > 0 && department.trim().length < 2}>
+              Department is required.
             </HelperText>
 
             <TextInput
@@ -303,8 +303,8 @@ export default function SellScreen() {
               placeholder="Write what it is, condition, pickup details, etc."
               style={{ marginTop: 4 }}
             />
-            <HelperText type={description.trim().length < 10 ? 'error' : 'info'} visible>
-              {description.trim().length < 10 ? 'Description should be at least 10 characters.' : ' '}
+            <HelperText type="error" visible={description.length > 0 && description.trim().length < 10}>
+              Description should be at least 10 characters.
             </HelperText>
 
             <Text variant="titleSmall" style={{ fontWeight: '600', marginTop: 8, marginBottom: 6 }}>
@@ -340,6 +340,9 @@ export default function SellScreen() {
           </Card.Content>
         </Card>
       </ScrollView>
+
+      {/* Toast Notification */}
+      <Toast config={toast} onDismiss={hideToast} />
     </SafeAreaView>
   );
 }
